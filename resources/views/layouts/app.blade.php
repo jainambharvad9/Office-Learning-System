@@ -23,7 +23,7 @@
 
 <body>
     @include('partials.header')
-
+    <h1>Jainam Saraiya</h1>
     <main class="main-content">
         @yield('content')
     </main>
