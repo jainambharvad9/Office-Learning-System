@@ -24,12 +24,15 @@ class AdminController extends Controller
             ->map(function ($intern) {
                 $totalVideos = Video::count();
                 $completedVideos = $intern->videoProgress->where('is_completed', true)->count();
+                $watchCount = $completedVideos; // Watch count = completed videos
                 $progress = $totalVideos > 0 ? ($completedVideos / $totalVideos) * 100 : 0;
 
                 return [
                     'name' => $intern->name,
                     'progress' => round($progress, 1),
-                    'status' => $progress == 100 ? 'Completed' : 'In Progress'
+                    'status' => $progress == 100 ? 'Completed' : 'In Progress',
+                    'watch_count' => $watchCount,
+                    'total_videos' => $totalVideos
                 ];
             });
 
@@ -38,26 +41,35 @@ class AdminController extends Controller
 
     public function uploadVideo(Request $request)
     {
-        try {
-            // Check PHP limits before processing
-            $maxUpload = ini_get('upload_max_filesize');
-            $maxPost = ini_get('post_max_size');
-            $memoryLimit = ini_get('memory_limit');
+        // Check PHP limits before processing
+        $maxUpload = ini_get('upload_max_filesize');
+        $maxPost = ini_get('post_max_size');
+        $memoryLimit = ini_get('memory_limit');
 
-            // Convert to bytes for comparison
-            $maxUploadBytes = $this->convertToBytes($maxUpload);
-            $maxPostBytes = $this->convertToBytes($maxPost);
+        // Convert to bytes for comparison
+        $maxUploadBytes = $this->convertToBytes($maxUpload);
+        $maxPostBytes = $this->convertToBytes($maxPost);
 
-            if ($maxUploadBytes < 157286400 || $maxPostBytes < 209715200) { // 150MB and 200MB
-                return redirect()->back()->with(
-                    'error',
-                    "Server configuration error. Please ensure PHP limits are set correctly:<br>" .
-                        "upload_max_filesize: {$maxUpload} (should be 150M+)<br>" .
-                        "post_max_size: {$maxPost} (should be 200M+)<br>" .
+        if ($maxUploadBytes < 157286400 || $maxPostBytes < 209715200) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Server configuration error. Please ensure PHP limits are set correctly:\n" .
+                        "upload_max_filesize: {$maxUpload} (should be 150M+)\n" .
+                        "post_max_size: {$maxPost} (should be 200M+)\n" .
                         "Use the start_server.bat file to start the server with correct configuration."
-                );
+                ], 500);
             }
+            return redirect()->back()->with(
+                'error',
+                "Server configuration error. Please ensure PHP limits are set correctly:<br>" .
+                    "upload_max_filesize: {$maxUpload} (should be 150M+)<br>" .
+                    "post_max_size: {$maxPost} (should be 200M+)<br>" .
+                    "Use the start_server.bat file to start the server with correct configuration."
+            );
+        }
 
+        try {
             $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
@@ -66,6 +78,12 @@ class AdminController extends Controller
 
             // Check if file was uploaded successfully
             if (!$request->hasFile('video') || !$request->file('video')->isValid()) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File upload failed. Please try again.'
+                    ], 400);
+                }
                 return redirect()->back()->with('error', 'File upload failed. Please try again.');
             }
 
@@ -73,6 +91,12 @@ class AdminController extends Controller
 
             // Additional file size check
             if ($file->getSize() > 157286400) { // 150MB in bytes
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File size exceeds 150MB limit.'
+                    ], 400);
+                }
                 return redirect()->back()->with('error', 'File size exceeds 150MB limit.');
             }
 
@@ -80,6 +104,12 @@ class AdminController extends Controller
             $videoPath = $file->store('videos', 'public');
 
             if (!$videoPath) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to save video file.'
+                    ], 500);
+                }
                 return redirect()->back()->with('error', 'Failed to save video file.');
             }
 
@@ -103,23 +133,46 @@ class AdminController extends Controller
                 'duration' => $duration
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload failed: ' . $e->getMessage()
+                ], 500);
+            }
             return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage());
         }
     }
 
     public function updateVideoDuration(Request $request)
     {
-        $request->validate([
-            'video_id' => 'required|exists:videos,id',
-            'duration' => 'required|numeric|min:0',
-        ]);
+        try {
+            $request->validate([
+                'video_id' => 'required|exists:videos,id',
+                'duration' => 'required|numeric|min:0',
+            ]);
 
-        $video = Video::findOrFail($request->video_id);
-        $video->update(['duration' => (int) $request->duration]);
+            $video = Video::findOrFail($request->video_id);
+            $video->update(['duration' => (int) $request->duration]);
 
-        return response()->json(['success' => true]);
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Duration update failed: ' . $e->getMessage()
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'Duration update failed: ' . $e->getMessage());
+        }
     }
 
     public function manageInterns()
@@ -141,11 +194,27 @@ class AdminController extends Controller
                     'intern_name' => $progress->user->name,
                     'video_name' => $progress->video->title,
                     'watch_percentage' => round($percentage, 1),
+                    'watched_duration' => gmdate('i:s', $progress->watched_duration),
+                    'total_duration' => gmdate('i:s', $progress->video->duration),
                     'completion_status' => $progress->is_completed ? 'Completed' : 'In Progress'
                 ];
             });
 
-        return view('admin.reports', compact('reports'));
+        // Group by user for watch counts
+        $userWatchCounts = User::where('role', 'intern')
+            ->with(['videoProgress' => function ($query) {
+                $query->where('is_completed', true);
+            }])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'name' => $user->name,
+                    'watch_count' => $user->videoProgress->count(),
+                    'total_videos' => Video::count()
+                ];
+            });
+
+        return view('admin.reports', compact('reports', 'userWatchCounts'));
     }
 
     private function getVideoDuration($filePath)
@@ -204,6 +273,59 @@ class AdminController extends Controller
         $phpInfo['memory_ok'] = $phpInfo['memory_limit_bytes'] >= 268435456; // 256MB
 
         return view('admin.diagnostics', compact('phpInfo'));
+    }
+
+    public function manageVideos()
+    {
+        $videos = Video::withCount(['progress as completed_count' => function ($query) {
+            $query->where('is_completed', true);
+        }])->get()->map(function ($video) {
+            return [
+                'id' => $video->id,
+                'title' => $video->title,
+                'description' => $video->description,
+                'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : 'Unknown',
+                'file_size' => $this->getFileSize(storage_path('app/public/' . $video->video_path)),
+                'upload_date' => $video->created_at->format('M d, Y'),
+                'completed_count' => $video->completed_count,
+                'total_views' => VideoProgress::where('video_id', $video->id)->count(),
+            ];
+        });
+
+        return view('admin.videos', compact('videos'));
+    }
+
+    public function deleteVideo($id)
+    {
+        $video = Video::findOrFail($id);
+
+        // Delete the video file from storage
+        if (Storage::disk('public')->exists($video->video_path)) {
+            Storage::disk('public')->delete($video->video_path);
+        }
+
+        // Delete associated progress records
+        VideoProgress::where('video_id', $id)->delete();
+
+        // Delete the video record
+        $video->delete();
+
+        return redirect()->route('admin.videos')->with('success', 'Video deleted successfully!');
+    }
+
+    private function getFileSize($filePath)
+    {
+        if (file_exists($filePath)) {
+            $bytes = filesize($filePath);
+            $units = ['B', 'KB', 'MB', 'GB'];
+            $i = 0;
+            while ($bytes >= 1024 && $i < count($units) - 1) {
+                $bytes /= 1024;
+                $i++;
+            }
+            return round($bytes, 2) . ' ' . $units[$i];
+        }
+        return 'Unknown';
     }
 
     /**

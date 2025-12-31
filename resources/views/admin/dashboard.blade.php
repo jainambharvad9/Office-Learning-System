@@ -60,6 +60,9 @@
                                         Intern Name</th>
                                     <th
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        Watch Count</th>
+                                    <th
+                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
                                         Progress</th>
                                     <th
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
@@ -70,6 +73,9 @@
                                 @foreach($internProgress as $intern)
                                     <tr style="border-bottom: 1px solid var(--border-light);">
                                         <td style="padding: 0.75rem; color: var(--text-primary);">{{ $intern['name'] }}</td>
+                                        <td style="padding: 0.75rem; color: var(--text-primary);">
+                                            {{ $intern['watch_count'] }} / {{ $intern['total_videos'] }}
+                                        </td>
                                         <td style="padding: 0.75rem;">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                                 <div class="progress-bar" style="flex: 1; height: 8px;">

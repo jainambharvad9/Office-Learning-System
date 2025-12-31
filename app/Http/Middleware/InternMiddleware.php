@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class InternMiddleware
@@ -15,7 +16,10 @@ class InternMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isIntern()) {
+        if (!Auth::check() || !Auth::user()->isIntern()) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             return redirect('/')->with('error', 'Access denied. Intern only.');
         }
 

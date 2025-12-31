@@ -66,7 +66,7 @@
             </div>
 
             <!-- Server Status -->
-            <div class="card" style="margin-bottom: 2rem;">
+            {{-- <div class="card" style="margin-bottom: 2rem;">
                 <div class="card-header">
                     <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-server"></i>
@@ -99,20 +99,21 @@
                         </div>
                     </div>
 
-                    @if(ini_get('upload_max_filesize') === '150M' && ini_get('post_max_size') === '200M' && ini_get('memory_limit') === '256M')
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i>
-                            <strong>Configuration OK</strong> - Large video uploads are supported!
-                        </div>
+                    @if(ini_get('upload_max_filesize') === '150M' && ini_get('post_max_size') === '200M' &&
+                    ini_get('memory_limit') === '256M')
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Configuration OK</strong> - Large video uploads are supported!
+                    </div>
                     @else
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Configuration Issue</strong> - Uploads may fail. Use <code>run_server.bat</code> for correct
-                            limits.
-                        </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Configuration Issue</strong> - Uploads may fail. Use <code>run_server.bat</code> for correct
+                        limits.
+                    </div>
                     @endif
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Upload Form -->
             <div class="card">
@@ -171,8 +172,16 @@
         async function handleUpload(e) {
             e.preventDefault();
 
+            // Check CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfToken) {
+                alert('CSRF token not found. Please refresh the page.');
+                return;
+            }
+
             const form = document.getElementById('uploadForm');
             const formData = new FormData(form);
+            formData.append('_token', csrfToken.getAttribute('content'));
             const uploadBtn = document.getElementById('uploadBtn');
             const uploadProgress = document.getElementById('uploadProgress');
             const progressBar = document.getElementById('progressBar');
@@ -200,15 +209,25 @@
 
             try {
                 // Upload the video
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
+                const response = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', form.action);
+                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
+                    xhr.setRequestHeader('Accept', 'application/json');
+                    xhr.withCredentials = true;
+                    xhr.onload = () => resolve(xhr);
+                    xhr.onerror = () => reject(new Error('Network error'));
+                    xhr.send(formData);
                 });
 
-                const result = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response url:', response.responseURL);
+
+                if (response.status === 302) {
+                    throw new Error('Redirected to login. Please refresh the page and try again.');
+                }
+
+                const result = JSON.parse(response.responseText);
 
                 if (response.ok && result.success) {
                     // Extract video duration and update
@@ -226,7 +245,11 @@
                         location.reload();
                     }, 2000);
                 } else {
-                    throw new Error(result.message || 'Upload failed');
+                    let errorMessage = result.message || 'Upload failed';
+                    if (result.errors) {
+                        errorMessage += ': ' + Object.values(result.errors).flat().join(', ');
+                    }
+                    throw new Error(errorMessage);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
@@ -257,19 +280,23 @@
 
         async function updateVideoDuration(videoId, duration) {
             try {
-                const response = await fetch('{{ route("admin.update.video.duration") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                const response = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '{{ route("admin.update.video.duration") }}');
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
+                    xhr.setRequestHeader('Accept', 'application/json');
+                    xhr.withCredentials = true;
+                    xhr.onload = () => resolve(xhr);
+                    xhr.onerror = () => reject(new Error('Network error'));
+                    xhr.send(JSON.stringify({
                         video_id: videoId,
                         duration: duration
-                    })
+                    }));
                 });
 
-                return await response.json();
+                return JSON.parse(response.responseText);
             } catch (error) {
                 console.error('Duration update failed:', error);
             }

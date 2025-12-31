@@ -26,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/upload-video', function () {
             return view('admin.upload');
         })->name('upload.form');
+        Route::get('/videos', [AdminController::class, 'manageVideos'])->name('videos');
+        Route::delete('/videos/{id}', [AdminController::class, 'deleteVideo'])->name('videos.delete');
         Route::get('/interns', [AdminController::class, 'manageInterns'])->name('interns');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/diagnostics', [AdminController::class, 'diagnostics'])->name('diagnostics');
@@ -40,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['intern'])->group(function () {
         Route::get('/video/{id}', [VideoController::class, 'watch'])->name('video.watch');
         Route::post('/save-progress', [VideoController::class, 'saveProgress'])->name('video.save.progress');
+        Route::post('/update-video-duration', [VideoController::class, 'updateDuration'])->name('video.update.duration');
     });
 });
 

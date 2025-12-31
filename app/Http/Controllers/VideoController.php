@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Video;
 use App\Models\VideoProgress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
     public function watch($id)
     {
         $video = Video::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Check if user can access this video (for now, all can)
         $progress = VideoProgress::firstOrCreate(
@@ -29,7 +30,7 @@ class VideoController extends Controller
             'watched_duration' => 'required|numeric|min:0',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
         $video = Video::findOrFail($request->video_id);
 
         $progress = VideoProgress::updateOrCreate(
@@ -37,10 +38,42 @@ class VideoController extends Controller
             ['watched_duration' => $request->watched_duration]
         );
 
-        // Check if completed (allow for small tolerance)
-        if ($video->duration > 0 && $request->watched_duration >= ($video->duration - 5)) { // 5 second tolerance
-            $progress->update(['is_completed' => true]);
+        // Check if completed
+        $completed = $request->boolean('completed', false);
+        $isCompleted = $completed;
+
+        \Log::info("message");("SaveProgress: video_id={$request->video_id}, watched_duration={$request->watched_duration}, completed={$completed}, video_duration={$video->duration}");
+
+        if (!$isCompleted && $video->duration > 0) {
+            // Allow 95% completion or within 10 seconds of end
+            $isCompleted = $request->watched_duration >= ($video->duration * 0.95) ||
+                $request->watched_duration >= ($video->duration - 10);
+            \Log::info("SaveProgress: calculated isCompleted={$isCompleted}");
         }
+
+        if ($isCompleted) {
+            $progress->update(['is_completed' => true]);
+            \Log::info("SaveProgress: marked as completed");
+        }
+
+        return response()->json([
+            'success' => true,
+            'completed' => $progress->is_completed
+        ]);
+    }
+
+    public function updateDuration(Request $request)
+    {
+        $request->validate([
+            'video_id' => 'required|exists:videos,id',
+            'duration' => 'required|numeric|min:0',
+        ]);
+
+        $video = Video::findOrFail($request->video_id);
+        $oldDuration = $video->duration;
+        $video->update(['duration' => (int) $request->duration]);
+
+        \Log::info("UpdateDuration: video_id={$request->video_id}, old_duration={$oldDuration}, new_duration={$request->duration}");
 
         return response()->json(['success' => true]);
     }

@@ -22,6 +22,9 @@
                         <li><a href="{{ route('admin.upload.form') }}"
                                 class="{{ request()->routeIs('admin.upload.form') ? 'active' : '' }}"><i
                                     class="fas fa-video"></i> Upload</a></li>
+                        <li><a href="{{ route('admin.videos') }}"
+                                class="{{ request()->routeIs('admin.videos') ? 'active' : '' }}"><i class="fas fa-film"></i>
+                                Videos</a></li>
                         <li><a href="{{ route('admin.reports') }}"
                                 class="{{ request()->routeIs('admin.reports') ? 'active' : '' }}"><i
                                     class="fas fa-chart-bar"></i> Reports</a></li>
