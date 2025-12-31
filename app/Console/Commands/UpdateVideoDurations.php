@@ -11,43 +11,107 @@ class UpdateVideoDurations extends Command
      *
      * @var string
      */
-    protected $signature = 'videos:update-durations';
+    protected $signature = 'videos:update-durations {--video_id= : Process specific video by ID}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Update video durations for videos that have duration set to 0';
+    protected $description = 'Update video durations for videos that don\'t have duration set';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $videos = \App\Models\Video::where('duration', 0)->get();
+        $videoId = $this->option('video_id');
 
-        if ($videos->isEmpty()) {
-            $this->info('All videos have valid durations!');
-            return;
-        }
+        if ($videoId) {
+            $video = \App\Models\Video::find($videoId);
+            if (!$video) {
+                $this->error("Video with ID {$videoId} not found.");
+                return 1;
+            }
 
-        $this->info('Found ' . $videos->count() . ' videos with duration 0:');
-        $this->newLine();
+            $this->processVideo($video);
+        } else {
+            $videos = \App\Models\Video::where('duration', 0)->orWhereNull('duration')->get();
 
-        foreach ($videos as $video) {
-            $this->line('ID: ' . $video->id);
-            $this->line('Title: ' . $video->title);
-            $this->line('Path: ' . storage_path('app/public/' . $video->path));
-            $this->line('To update manually, use:');
-            $this->line('php artisan tinker');
-            $this->line('$video = App\Models\Video::find(' . $video->id . ');');
-            $this->line('$video->update([\'duration\' => YOUR_DURATION_IN_SECONDS]);');
+            if ($videos->isEmpty()) {
+                $this->info('No videos found that need duration processing.');
+                return 0;
+            }
+
+            $this->info("Found {$videos->count()} videos to process.");
+
+            $bar = $this->output->createProgressBar($videos->count());
+            $bar->start();
+
+            foreach ($videos as $video) {
+                $this->processVideo($video);
+                $bar->advance();
+            }
+
+            $bar->finish();
             $this->newLine();
-            $this->line('---');
+            $this->info('Duration processing completed.');
         }
 
-        $this->warn('Note: Since FFmpeg is not available, durations must be set manually.');
-        $this->info('Future video uploads will automatically extract duration using JavaScript.');
+        return 0;
+    }
+
+    private function processVideo($video)
+    {
+        try {
+            $filePath = storage_path('app/public/' . $video->video_path);
+
+            if (!file_exists($filePath)) {
+                $this->error("Video file not found: {$filePath}");
+                return;
+            }
+
+            $duration = $this->getVideoDuration($filePath);
+
+            if ($duration > 0) {
+                $video->update(['duration' => $duration]);
+                $this->info("Updated {$video->title}: " . gmdate('i:s', $duration));
+            } else {
+                $this->warn("Could not determine duration for {$video->title}");
+            }
+        } catch (\Exception $e) {
+            $this->error("Failed to process {$video->title}: {$e->getMessage()}");
+        }
+    }
+
+    private function getVideoDuration($filePath)
+    {
+        try {
+            // Try to use FFmpeg if available
+            if (class_exists('FFMpeg\FFMpeg')) {
+                $ffmpeg = FFMpeg::create();
+                $video = $ffmpeg->open($filePath);
+                $duration = $video->getFormat()->get('duration');
+                return (int) $duration;
+            }
+        } catch (\Exception $e) {
+            // FFmpeg not available or failed
+        }
+
+        // Fallback: Try to get duration using getID3 if available
+        try {
+            if (class_exists('getID3')) {
+                $getID3 = new \getID3();
+                $fileInfo = $getID3->analyze($filePath);
+                if (isset($fileInfo['playtime_seconds'])) {
+                    return (int) $fileInfo['playtime_seconds'];
+                }
+            }
+        } catch (\Exception $e) {
+            // getID3 not available
+        }
+
+        // Last resort: Return 0
+        return 0;
     }
 }

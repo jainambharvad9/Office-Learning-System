@@ -28,19 +28,34 @@ php_value max_execution_time 300
 php_value max_input_time 300
 ```
 
-### Nginx Server (nginx.conf)
+### Nginx Server (nginx.conf) - UPDATED FOR VIDEO UPLOADS
 Add to your server block:
 ```
 server {
     # ... other config ...
 
+    # Increase timeouts for video uploads
     client_max_body_size 200M;
+    client_body_timeout 300s;
+    client_header_timeout 60s;
 
     location ~ \.php$ {
         # ... other php config ...
+        fastcgi_read_timeout 300s;
+        fastcgi_send_timeout 300s;
+        fastcgi_connect_timeout 60s;
         fastcgi_param PHP_VALUE "upload_max_filesize=150M \n post_max_size=200M \n memory_limit=256M \n max_execution_time=300 \n max_input_time=300";
     }
 }
+```
+
+### Alternative: .htaccess for Nginx (if using nginx with htaccess support)
+```
+php_value upload_max_filesize 150M
+php_value post_max_size 200M
+php_value memory_limit 256M
+php_value max_execution_time 300
+php_value max_input_time 300
 ```
 
 ### PHP-FPM (php.ini method)
@@ -55,16 +70,35 @@ max_input_time = 300
 
 ## Troubleshooting
 
+### 504 Gateway Timeout (Nginx)
+If you get 504 errors during video uploads:
+1. **Increase Nginx timeouts** (see nginx.conf section above)
+2. **Check PHP-FPM timeouts** in `/etc/php/8.1/fpm/pool.d/www.conf`:
+   ```
+   request_terminate_timeout = 300s
+   ```
+3. **Restart services**:
+   ```bash
+   sudo systemctl restart nginx
+   sudo systemctl restart php8.1-fpm
+   ```
+
 ### If uploads still fail:
 1. Check PHP limits: `php -r "echo ini_get('upload_max_filesize');"`
 2. Verify server config: `phpinfo()` in a test file
 3. Check file permissions on upload directory
 4. Ensure storage directory is writable: `chmod 755 storage/`
 
-### Common Issues:
-- **PostTooLargeException**: post_max_size too small
-- **Memory exhausted**: memory_limit too small
-- **Upload fails silently**: upload_max_filesize too small
+### Process Video Durations
+After deployment, run this command to process existing videos:
+```bash
+php artisan videos:update-durations
+```
+
+For specific video:
+```bash
+php artisan videos:update-durations --video_id=123
+```
 
 ## Easy Deployment Checklist
 

@@ -113,8 +113,9 @@ class AdminController extends Controller
                 return redirect()->back()->with('error', 'Failed to save video file.');
             }
 
-            // Get video duration using FFmpeg or fallback
-            $duration = $this->getVideoDuration(storage_path('app/public/' . $videoPath));
+            // Skip duration extraction during upload to prevent timeouts
+            // Duration will be extracted later via AJAX or background job
+            $duration = 0;
 
             Video::create([
                 'title' => $request->title,
@@ -128,7 +129,7 @@ class AdminController extends Controller
 
             $responseData = [
                 'success' => true,
-                'message' => 'Video uploaded successfully! Duration: ' . gmdate('i:s', $duration),
+                'message' => 'Video uploaded successfully! Duration will be processed shortly.',
                 'video_id' => $video->id,
                 'duration' => $duration
             ];
@@ -156,26 +157,35 @@ class AdminController extends Controller
         }
     }
 
-    public function updateVideoDuration(Request $request)
+    public function processVideoDuration(Video $video)
     {
         try {
-            $request->validate([
-                'video_id' => 'required|exists:videos,id',
-                'duration' => 'required|numeric|min:0',
-            ]);
+            $filePath = storage_path('app/public/' . $video->video_path);
 
-            $video = Video::findOrFail($request->video_id);
-            $video->update(['duration' => (int) $request->duration]);
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            if ($request->expectsJson()) {
+            if (!file_exists($filePath)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Duration update failed: ' . $e->getMessage()
-                ], 500);
+                    'message' => 'Video file not found'
+                ], 404);
             }
-            return redirect()->back()->with('error', 'Duration update failed: ' . $e->getMessage());
+
+            $duration = $this->getVideoDuration($filePath);
+
+            if ($duration > 0) {
+                $video->update(['duration' => $duration]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'duration' => $duration,
+                'formatted_duration' => gmdate('i:s', $duration)
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Video duration processing failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process video duration: ' . $e->getMessage()
+            ], 500);
         }
     }
 

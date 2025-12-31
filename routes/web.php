@@ -23,6 +23,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::post('/upload-video', [AdminController::class, 'uploadVideo'])->name('upload.video');
         Route::post('/update-video-duration', [AdminController::class, 'updateVideoDuration'])->name('update.video.duration');
+        Route::post('/process-video-duration/{video}', [AdminController::class, 'processVideoDuration'])->name('process.video.duration');
         Route::get('/upload-video', function () {
             return view('admin.upload');
         })->name('upload.form');

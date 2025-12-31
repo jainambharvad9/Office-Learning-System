@@ -208,17 +208,29 @@
             uploadProgress.style.display = 'block';
 
             try {
-                // Upload the video
-                const response = await new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', form.action);
-                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
-                    xhr.setRequestHeader('Accept', 'application/json');
-                    xhr.withCredentials = true;
-                    xhr.onload = () => resolve(xhr);
-                    xhr.onerror = () => reject(new Error('Network error'));
-                    xhr.send(formData);
-                });
+                // Upload the video with timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', form.action);
+                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
+                xhr.setRequestHeader('Accept', 'application/json');
+                xhr.withCredentials = true;
+                xhr.timeout = 240000; // 4 minutes
+                xhr.onload = () => {
+                    clearTimeout(timeoutId);
+                    resolve(xhr);
+                };
+                xhr.onerror = () => {
+                    clearTimeout(timeoutId);
+                    reject(new Error('Network error'));
+                };
+                xhr.ontimeout = () => {
+                    clearTimeout(timeoutId);
+                    reject(new Error('Upload timeout - file may be too large or server is busy'));
+                };
+                xhr.send(formData);
 
                 console.log('Response status:', response.status);
                 console.log('Response url:', response.responseURL);
@@ -242,18 +254,16 @@
 
                 if (isSuccess) {
                     console.log('Upload successful, processing duration update...');
-                    // Extract video duration and update
-                    const duration = await getVideoDuration(file);
-                    console.log('Client-side duration:', duration);
-                    if (duration > 0 && result.video_id) {
-                        console.log('Updating duration on server...');
-                        await updateVideoDuration(result.video_id, duration);
-                    }
 
-                    // Show success message
-                    progressText.textContent = result.message || 'Upload completed!';
+                    // Show success message immediately
+                    progressText.textContent = result.message || 'Upload completed! Processing video...';
                     progressBar.style.width = '100%';
                     progressBar.style.background = 'var(--success)';
+
+                    // Process video duration asynchronously (don't wait for it)
+                    if (result.video_id) {
+                        processVideoDurationAsync(result.video_id);
+                    }
 
                     setTimeout(() => {
                         location.reload();
@@ -317,10 +327,28 @@
             }
         }
 
-        function formatDuration(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return mins + ':' + (secs < 10 ? '0' : '') + secs;
+        function processVideoDurationAsync(videoId) {
+            // Process duration asynchronously without blocking the UI
+            fetch('/admin/process-video-duration/' + videoId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Duration processing result:', data);
+                    if (data.success && data.duration > 0) {
+                        console.log('Video duration updated:', data.formatted_duration);
+                    }
+                })
+                .catch(error => {
+                    console.error('Duration processing failed:', error);
+                    // Don't show error to user as upload was successful
+                });
         }
 
         // File size validation on selection
