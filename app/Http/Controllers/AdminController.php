@@ -126,12 +126,16 @@ class AdminController extends Controller
             // Get the created video for response
             $video = Video::where('video_path', $videoPath)->first();
 
-            return response()->json([
+            $responseData = [
                 'success' => true,
                 'message' => 'Video uploaded successfully! Duration: ' . gmdate('i:s', $duration),
                 'video_id' => $video->id,
                 'duration' => $duration
-            ]);
+            ];
+
+            \Log::info('Upload response:', $responseData);
+
+            return response()->json($responseData);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([

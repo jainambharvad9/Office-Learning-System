@@ -222,17 +222,31 @@
 
                 console.log('Response status:', response.status);
                 console.log('Response url:', response.responseURL);
+                console.log('Response text:', response.responseText);
 
                 if (response.status === 302) {
                     throw new Error('Redirected to login. Please refresh the page and try again.');
                 }
 
-                const result = JSON.parse(response.responseText);
+                let result;
+                try {
+                    result = JSON.parse(response.responseText);
+                    console.log('Parsed result:', result);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error('Invalid response from server: ' + response.responseText.substring(0, 200));
+                }
 
-                if (response.ok && result.success) {
+                // Check if upload was successful - be more lenient for production
+                const isSuccess = response.ok && (result.success === true || (result.success === undefined && result.message && result.message.includes('successfully')));
+
+                if (isSuccess) {
+                    console.log('Upload successful, processing duration update...');
                     // Extract video duration and update
                     const duration = await getVideoDuration(file);
+                    console.log('Client-side duration:', duration);
                     if (duration > 0 && result.video_id) {
+                        console.log('Updating duration on server...');
                         await updateVideoDuration(result.video_id, duration);
                     }
 
@@ -245,6 +259,7 @@
                         location.reload();
                     }, 2000);
                 } else {
+                    console.error('Upload failed - response.ok:', response.ok, 'result.success:', result.success, 'result.message:', result.message, 'full result:', result);
                     let errorMessage = result.message || 'Upload failed';
                     if (result.errors) {
                         errorMessage += ': ' + Object.values(result.errors).flat().join(', ');
