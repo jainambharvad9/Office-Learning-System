@@ -13,16 +13,7 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/home', function () {
-        $user = auth()->user();
-        if ($user->isAdmin()) {
-            return redirect('/admin/dashboard');
-        } else {
-            return redirect('/intern/dashboard');
-        }
-    })->name('home');
-
-    // Legacy dashboard redirect for backward compatibility
+    // // Legacy dashboard redirect for backward compatibility
     Route::get('/dashboard', function () {
         return redirect('/home');
     });
