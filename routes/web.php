@@ -51,3 +51,8 @@ Route::middleware(['auth'])->group(function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/interns/register', [InternController::class, 'register'])->name('admin.interns.register');
+    // Add other admin routes here
+});

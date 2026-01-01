@@ -94,7 +94,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="">
+                        <form method="POST" action="{{ route('admin.interns.register') }}">
                             @csrf
 
                             <div class="form-group">
