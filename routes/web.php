@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/videos', [AdminController::class, 'manageVideos'])->name('videos');
         Route::delete('/videos/{id}', [AdminController::class, 'deleteVideo'])->name('videos.delete');
         Route::get('/interns', [AdminController::class, 'manageInterns'])->name('interns');
+        Route::post('/interns/register', [AdminController::class, 'registerIntern'])->name('interns.register');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/diagnostics', [AdminController::class, 'diagnostics'])->name('diagnostics');
     });

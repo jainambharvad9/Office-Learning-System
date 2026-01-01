@@ -1,64 +1,54 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 
-@section('title', 'Office Learning - Login')
+@section('title', 'Login - Office Learning')
 
-@section('styles')
-    <style>
-        /* Login specific styles */
-        body {
-            background: linear-gradient(135deg, var(--background) 0%, #E5E7EB 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 2rem;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .logo h1 {
-            color: var(--primary);
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
-        }
-    </style>
-@endsection
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/auth.css?v=' . time()) }}">
+@endpush
 
 @section('content')
-    <div class="login-container">
+    <div class="auth-container">
         <div class="logo">
-            <h1>Office Learning</h1>
+            <h1><i class="fas fa-graduation-cap"></i> Office Learning</h1>
+            <p>Sign in to your account</p>
         </div>
+
+        @if($errors->any())
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    @foreach($errors->all() as $error)
+                        {{ $error }}<br>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}">
             @csrf
+
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="{{ old('email') }}" required>
+                <label for="email">
+                    <i class="fas fa-envelope" style="margin-right: 0.5rem;"></i>
+                    Email Address
+                </label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}"
+                       placeholder="Enter your email address" required autofocus>
             </div>
+
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">
+                    <i class="fas fa-lock" style="margin-right: 0.5rem;"></i>
+                    Password
+                </label>
+                <input type="password" id="password" name="password"
+                       placeholder="Enter your password" required>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-sign-in-alt"></i>
+                Sign In
+            </button>
         </form>
     </div>
 @endsection

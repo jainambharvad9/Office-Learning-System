@@ -7,6 +7,7 @@ use App\Models\Video;
 use App\Models\VideoProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 use FFMpeg\FFMpeg;
 use FFMpeg\Coordinate\TimeCode;
 
@@ -193,6 +194,24 @@ class AdminController extends Controller
     {
         $interns = User::where('role', 'intern')->get();
         return view('admin.interns', compact('interns'));
+    }
+
+    public function registerIntern(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'intern',
+        ]);
+
+        return redirect()->back()->with('success', 'Intern registered successfully!');
     }
 
     public function reports()
