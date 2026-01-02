@@ -211,14 +211,14 @@
                 // Upload the video with timeout
                 const response = await new Promise((resolve, reject) => {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
 
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', form.action);
                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
                     xhr.setRequestHeader('Accept', 'application/json');
                     xhr.withCredentials = true;
-                    xhr.timeout = 240000; // 4 minutes
+                    xhr.timeout = 300000; // 5 minutes
                     xhr.onload = () => {
                         clearTimeout(timeoutId);
                         resolve(xhr);
