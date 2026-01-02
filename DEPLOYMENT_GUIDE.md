@@ -107,3 +107,51 @@ php artisan videos:update-durations --video_id=123
 - [ ] Set proper file permissions
 - [ ] Test with large file (100MB+)
 - [ ] Monitor server resources during upload
+
+---
+
+# 🚨 CSS FIXES FOR LIVE SERVER
+
+## If CSS is Broken on Production
+
+### Step 1: Build Assets Before Deployment
+```bash
+# Always run this before uploading to live server
+npm run build
+```
+
+### Step 2: Upload These Files
+Make sure these are uploaded to your live server:
+- `public/build/` (entire directory with manifest.json and assets/)
+- `public/css/auth.css` (for login/register pages)
+- All files in `resources/views/`
+
+### Step 3: Clear Caches on Server
+```bash
+php artisan cache:clear
+php artisan view:clear
+php artisan config:clear
+```
+
+### Step 4: Verify Configuration
+Check `resources/views/layouts/app.blade.php` contains:
+```blade
+@vite('resources/css/lms.css')
+```
+
+### Step 5: Check Live Server
+1. Visit your site
+2. Open DevTools (F12) → Network tab
+3. CSS should load from `/build/assets/lms-[hash].css`
+4. No 404 errors for CSS files
+
+### Emergency Fix (If Still Broken)
+Temporarily edit `resources/views/layouts/app.blade.php`:
+```blade
+{{-- @vite('resources/css/lms.css') --}}
+<link rel="stylesheet" href="{{ asset('css/lms.css?v=' . time()) }}">
+```
+
+Then rebuild and redeploy.
+
+**Remember**: `npm run build` is required before every production deployment!

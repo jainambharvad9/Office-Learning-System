@@ -21,9 +21,8 @@
                     <i class="fas fa-user" style="margin-right: 0.5rem;"></i>
                     Full Name
                 </label>
-                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror"
-                       name="name" value="{{ old('name') }}" required autocomplete="name" autofocus
-                       placeholder="Enter your full name">
+                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name"
+                    value="{{ old('name') }}" required autocomplete="name" autofocus placeholder="Enter your full name">
 
                 @error('name')
                     <span class="invalid-feedback" role="alert">
@@ -38,9 +37,8 @@
                     <i class="fas fa-envelope" style="margin-right: 0.5rem;"></i>
                     Email Address
                 </label>
-                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror"
-                       name="email" value="{{ old('email') }}" required autocomplete="email"
-                       placeholder="Enter your email address">
+                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email"
+                    value="{{ old('email') }}" required autocomplete="email" placeholder="Enter your email address">
 
                 @error('email')
                     <span class="invalid-feedback" role="alert">
@@ -56,8 +54,7 @@
                     Password
                 </label>
                 <input id="password" type="password" class="form-control @error('password') is-invalid @enderror"
-                       name="password" required autocomplete="new-password"
-                       placeholder="Create a strong password">
+                    name="password" required autocomplete="new-password" placeholder="Create a strong password">
 
                 @error('password')
                     <span class="invalid-feedback" role="alert">
@@ -72,9 +69,8 @@
                     <i class="fas fa-lock" style="margin-right: 0.5rem;"></i>
                     Confirm Password
                 </label>
-                <input id="password-confirm" type="password" class="form-control"
-                       name="password_confirmation" required autocomplete="new-password"
-                       placeholder="Confirm your password">
+                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required
+                    autocomplete="new-password" placeholder="Confirm your password">
             </div>
 
             <button type="submit" class="btn-primary">
