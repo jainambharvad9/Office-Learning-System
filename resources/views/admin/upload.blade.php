@@ -49,7 +49,7 @@
                             <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">File Requirements</h4>
                             <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
                                 <li>Format: MP4 video files only</li>
-                                <li>Maximum size: 500MB</li>
+                                <li>Maximum size: 100MB</li>
                                 <li>HD quality recommended</li>
                             </ul>
                         </div>
@@ -147,7 +147,7 @@
                                     style="color: var(--error);">*</span></label>
                             <input type="file" id="video" name="video" accept=".mp4" required class="form-input">
                             <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
-                                <i class="fas fa-info-circle"></i> MP4 format only, maximum 500MB
+                                <i class="fas fa-info-circle"></i> MP4 format only, maximum 100MB
                             </small>
                         </div>
 
@@ -200,7 +200,7 @@
             const recommendedMax = 200 * 1024 * 1024; // 200MB recommended
 
             if (file.size > maxSize) {
-                alert('File size exceeds 500MB limit. Please choose a smaller file.');
+                alert('File size exceeds 100MB limit. Please choose a smaller file.');
                 return;
             }
 
@@ -393,7 +393,7 @@
             if (file) {
                 const maxSize = 500 * 1024 * 1024; // 500MB
                 if (file.size > maxSize) {
-                    alert('File size exceeds 500MB limit. Please choose a smaller file.');
+                    alert('File size exceeds 100MB limit. Please choose a smaller file.');
                     e.target.value = '';
                 }
             }
