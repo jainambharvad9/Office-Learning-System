@@ -2,7 +2,7 @@
 <header class="main-header">
     <div class="header-content">
         <div class="logo-section">
-            <h1 class="brand-logo">
+            <h1 class="brand-logo" style="width: 230px;">
                 <i class="fas fa-graduation-cap"></i>
                 Office Learning
             </h1>
@@ -28,9 +28,6 @@
                         <li><a href="{{ route('admin.reports') }}"
                                 class="{{ request()->routeIs('admin.reports') ? 'active' : '' }}"><i
                                     class="fas fa-chart-bar"></i> Reports</a></li>
-                        {{-- <li><a href="{{ route('admin.diagnostics') }}"
-                                class="{{ request()->routeIs('admin.diagnostics') ? 'active' : '' }}"><i
-                                    class="fas fa-cogs"></i> Diagnostics</a></li> --}}
                     @else
                         <li><a href="{{ route('intern.dashboard') }}"
                                 class="{{ request()->routeIs('intern.dashboard') ? 'active' : '' }}"><i class="fas fa-home"></i>

@@ -311,32 +311,6 @@ class AdminController extends Controller
         return 0;
     }
 
-    public function diagnostics()
-    {
-        $phpInfo = [
-            'upload_max_filesize' => ini_get('upload_max_filesize'),
-            'post_max_size' => ini_get('post_max_size'),
-            'memory_limit' => ini_get('memory_limit'),
-            'max_execution_time' => ini_get('max_execution_time'),
-            'max_input_time' => ini_get('max_input_time'),
-            'max_file_uploads' => ini_get('max_file_uploads'),
-            'loaded_config' => php_ini_loaded_file(),
-            'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-        ];
-
-        // Convert to bytes for display
-        $phpInfo['upload_max_filesize_bytes'] = $this->convertToBytes($phpInfo['upload_max_filesize']);
-        $phpInfo['post_max_size_bytes'] = $this->convertToBytes($phpInfo['post_max_size']);
-        $phpInfo['memory_limit_bytes'] = $this->convertToBytes($phpInfo['memory_limit']);
-
-        // Check if limits are sufficient
-        $phpInfo['upload_ok'] = $phpInfo['upload_max_filesize_bytes'] >= 157286400; // 150MB
-        $phpInfo['post_ok'] = $phpInfo['post_max_size_bytes'] >= 209715200; // 200MB
-        $phpInfo['memory_ok'] = $phpInfo['memory_limit_bytes'] >= 268435456; // 256MB
-
-        return view('admin.diagnostics', compact('phpInfo'));
-    }
-
     public function manageVideos()
     {
         $videos = Video::withCount(['progress as completed_count' => function ($query) {

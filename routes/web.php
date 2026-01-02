@@ -33,7 +33,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/interns/register', [AdminController::class, 'registerIntern'])->name('interns.register');
         Route::delete('/interns/{id}', [AdminController::class, 'deleteIntern'])->name('interns.delete');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
-        Route::get('/diagnostics', [AdminController::class, 'diagnostics'])->name('diagnostics');
     });
 
     // Intern routes
@@ -54,5 +53,5 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/interns/register', [InternController::class, 'register'])->name('admin.interns.register');   
+    Route::get('/interns/register', [InternController::class, 'register'])->name('admin.interns.register');
 });
