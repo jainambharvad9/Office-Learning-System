@@ -49,7 +49,7 @@
                             <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">File Requirements</h4>
                             <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
                                 <li>Format: MP4 video files only</li>
-                                <li>Maximum size: 150MB</li>
+                                <li>Maximum size: 500MB</li>
                                 <li>HD quality recommended</li>
                             </ul>
                         </div>
@@ -57,8 +57,9 @@
                             <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Best Practices</h4>
                             <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
                                 <li>Use descriptive titles</li>
-                                <li>Upload may take several minutes</li>
+                                <li>Upload may take several minutes for large files</li>
                                 <li>Do not close page during upload</li>
+                                <li>Check server_config.txt for large file uploads</li>
                             </ul>
                         </div>
                     </div>
@@ -146,7 +147,7 @@
                                     style="color: var(--error);">*</span></label>
                             <input type="file" id="video" name="video" accept=".mp4" required class="form-input">
                             <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
-                                <i class="fas fa-info-circle"></i> MP4 format only, maximum 150MB
+                                <i class="fas fa-info-circle"></i> MP4 format only, maximum 500MB
                             </small>
                         </div>
 
@@ -195,11 +196,18 @@
             }
 
             const file = fileInput.files[0];
-            const maxSize = 150 * 1024 * 1024; // 150MB
+            const maxSize = 500 * 1024 * 1024; // 500MB - increased limit
+            const recommendedMax = 200 * 1024 * 1024; // 200MB recommended
 
             if (file.size > maxSize) {
-                alert('File size exceeds 150MB limit. Please choose a smaller file.');
+                alert('File size exceeds 500MB limit. Please choose a smaller file.');
                 return;
+            }
+
+            if (file.size > recommendedMax) {
+                if (!confirm(`This file is ${(file.size / 1024 / 1024 / 1024).toFixed(1)}GB. Large files may take several minutes to upload. Continue?`)) {
+                    return;
+                }
             }
 
             // Show progress
@@ -211,16 +219,28 @@
                 // Upload the video with timeout
                 const response = await new Promise((resolve, reject) => {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
 
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', form.action);
                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
                     xhr.setRequestHeader('Accept', 'application/json');
                     xhr.withCredentials = true;
-                    xhr.timeout = 300000; // 5 minutes
+                    xhr.timeout = 600000; // 10 minutes
+
+                    // Add upload progress tracking
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+                            progressText.textContent = `Uploading... ${Math.round(percentComplete)}% (${(e.loaded / 1024 / 1024).toFixed(1)}MB / ${(e.total / 1024 / 1024).toFixed(1)}MB)`;
+                        }
+                    };
+
                     xhr.onload = () => {
                         clearTimeout(timeoutId);
+                        progressBar.style.width = '100%';
+                        progressText.textContent = 'Processing video...';
                         resolve(xhr);
                     };
                     xhr.onerror = () => {
@@ -371,12 +391,44 @@
         document.getElementById('video').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
-                const maxSize = 150 * 1024 * 1024; // 150MB
+                const maxSize = 500 * 1024 * 1024; // 500MB
                 if (file.size > maxSize) {
-                    alert('File size exceeds 150MB limit. Please choose a smaller file.');
+                    alert('File size exceeds 500MB limit. Please choose a smaller file.');
                     e.target.value = '';
                 }
             }
         });
     </script>
+
+    <style>
+        .progress-bar {
+            background-color: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            border-radius: var(--radius);
+        }
+
+        #uploadProgress {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 @endsection

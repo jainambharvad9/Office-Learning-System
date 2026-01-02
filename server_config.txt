@@ -1,26 +1,99 @@
-# PHP Configuration for Large File Uploads
-# Add to .htaccess or server config
+# SERVER CONFIGURATION FOR LARGE FILE UPLOADS
+# Apply these settings to fix 504 Gateway Timeout errors
 
-# Increase PHP limits
-php_value upload_max_filesize 200M
-php_value post_max_size 250M
-php_value max_execution_time 600
-php_value max_input_time 600
-php_value memory_limit 512M
+# ==========================================
+# FOR APACHE SERVERS (.htaccess)
+# ==========================================
+<IfModule mod_php.c>
+    php_value upload_max_filesize 500M
+    php_value post_max_size 600M
+    php_value max_execution_time 1200
+    php_value max_input_time 1200
+    php_value memory_limit 1024M
+    php_value max_file_uploads 10
+</IfModule>
 
-# For nginx, add to server block:
-# client_max_body_size 200M;
-# proxy_connect_timeout 600s;
-# proxy_send_timeout 600s;
-# proxy_read_timeout 600s;
-# fastcgi_read_timeout 600s;
+# ==========================================
+# FOR NGINX SERVERS
+# ==========================================
+# Add to nginx.conf or site configuration:
+#
+# server {
+#     listen 80;
+#     server_name yourdomain.com;
+#
+#     client_max_body_size 500M;
+#     client_body_timeout 1200s;
+#     client_header_timeout 1200s;
+#
+#     location / {
+#         proxy_connect_timeout 1200s;
+#         proxy_send_timeout 1200s;
+#         proxy_read_timeout 1200s;
+#         fastcgi_read_timeout 1200s;
+#         fastcgi_send_timeout 1200s;
+#         fastcgi_connect_timeout 1200s;
+#
+#         # Your existing proxy_pass or fastcgi_pass
+#         proxy_pass http://127.0.0.1:8000;
+#         # or
+#         # fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+#     }
+# }
 
-# Alternative: Use .user.ini file in public directory
-# upload_max_filesize = 200M
-# post_max_size = 250M
-# max_execution_time = 600
-# max_input_time = 600
-# memory_limit = 512M
+# ==========================================
+# FOR SHARED HOSTING (.user.ini)
+# ==========================================
+# Create .user.ini in public_html or public directory:
+# upload_max_filesize = 500M
+# post_max_size = 600M
+# max_execution_time = 1200
+# max_input_time = 1200
+# memory_limit = 1024M
+# max_file_uploads = 10
 
-# To run duration processing manually:
+# ==========================================
+# FOR CPANEL/WHM SERVERS
+# ==========================================
+# 1. Go to MultiPHP INI Editor
+# 2. Select your domain
+# 3. Set these values:
+#    - upload_max_filesize: 500M
+#    - post_max_size: 600M
+#    - max_execution_time: 1200
+#    - max_input_time: 1200
+#    - memory_limit: 1024M
+
+# ==========================================
+# FOR CLOUDFLARE (if using)
+# ==========================================
+# In Cloudflare Dashboard:
+# 1. Go to Speed > Optimization
+# 2. Disable "Rocket Loader"
+# 3. Go to Network
+# 4. Set "Chunked Transfer Encoding" to ON
+# 5. Set "WebSockets" to ON
+
+# ==========================================
+# TROUBLESHOOTING
+# ==========================================
+# If still getting timeouts:
+# 1. Check PHP-FPM settings (www.conf):
+#    request_terminate_timeout = 1200s
+#    request_slowlog_timeout = 1200s
+#
+# 2. Check server firewall (CSF/LFD):
+#    Ensure port 80/443 are open
+#
+# 3. Check server load:
+#    Run: uptime, top, or htop
+#
+# 4. Test with smaller files first
+# 5. Check server logs for specific errors
+
+# ==========================================
+# MANUAL DURATION PROCESSING
+# ==========================================
+# After upload, run these commands on server:
 # php artisan videos:process-durations --limit=5
+# php artisan videos:process-durations  # Process all
