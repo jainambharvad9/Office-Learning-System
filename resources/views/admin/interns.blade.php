@@ -51,6 +51,9 @@
                                         <th
                                             style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
                                             Status</th>
+                                        <th
+                                            style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                            Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -69,6 +72,16 @@
                                                 {{ $intern->created_at->format('M d, Y') }}</td>
                                             <td style="padding: 0.75rem;">
                                                 <span class="status-badge status-completed">Active</span>
+
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <form method="POST" action="{{ route('admin.interns.delete', $intern->id) }}" onsubmit="return confirm('Are you sure you want to delete this intern?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach

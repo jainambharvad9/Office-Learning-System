@@ -6,6 +6,7 @@ use App\Models\Video;
 use App\Models\VideoProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class VideoController extends Controller
 {
@@ -31,6 +32,8 @@ class VideoController extends Controller
         ]);
 
         $user = Auth::user();
+        \Log::info('SaveProgress called by user ' . $user->id . ' (' . $user->role . ') for video ' . $request->video_id . ', duration: ' . $request->watched_duration);
+
         $video = Video::findOrFail($request->video_id);
 
         $progress = VideoProgress::updateOrCreate(
@@ -42,18 +45,20 @@ class VideoController extends Controller
         $completed = $request->boolean('completed', false);
         $isCompleted = $completed;
 
-        \Log::info("message");("SaveProgress: video_id={$request->video_id}, watched_duration={$request->watched_duration}, completed={$completed}, video_duration={$video->duration}");
+        Log::info("message");
+        ("SaveProgress: video_id={$request->video_id}, watched_duration={$request->watched_duration}, completed={$completed}, video_duration={$video->duration}");
 
-        if (!$isCompleted && $video->duration > 0) {
+        if ($video->duration > 0) {
             // Allow 95% completion or within 10 seconds of end
             $isCompleted = $request->watched_duration >= ($video->duration * 0.95) ||
                 $request->watched_duration >= ($video->duration - 10);
-            \Log::info("SaveProgress: calculated isCompleted={$isCompleted}");
+            Log::info("SaveProgress: calculated isCompleted={$isCompleted}");
         }
 
         if ($isCompleted) {
+            $progress->increment('watch_count');
             $progress->update(['is_completed' => true]);
-            \Log::info("SaveProgress: marked as completed");
+            Log::info("SaveProgress: marked as completed, watch_count incremented");
         }
 
         return response()->json([

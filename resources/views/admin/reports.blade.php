@@ -41,7 +41,7 @@
                     <div class="stat-icon">
                         <i class="fas fa-percentage"></i>
                     </div>
-                    <div class="stat-number">{{ round($reports->avg('watch_percentage'), 1) }}%</div>
+                    <div class="stat-number">{{ $averageCompletion }}%</div>
                     <div class="stat-label">Avg Completion</div>
                 </div>
             </div>
@@ -73,6 +73,9 @@
                                         Progress</th>
                                     <th
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        Watch Count</th>
+                                    <th
+                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
                                         Status</th>
                                 </tr>
                             </thead>
@@ -96,6 +99,9 @@
                                                 <span
                                                     style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">{{ $report['watch_percentage'] }}%</span>
                                             </div>
+                                        </td>
+                                        <td style="padding: 0.75rem; color: var(--text-primary); font-weight: 500;">
+                                            {{ $report['watch_count'] }}
                                         </td>
                                         <td style="padding: 0.75rem;">
                                             <span

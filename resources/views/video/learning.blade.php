@@ -35,8 +35,8 @@
                                         {{ $progress->watched_duration }}s watched
                                     @endif
                                 </span>
-                            </div>
-                            <div class="progress-bar">
+                            </div> 
+                             <div class="progress-bar">
                                 <div class="progress-fill" id="progress-fill"
                                     style="width: {{ $video->duration > 0 ? min(100, ($progress->watched_duration / $video->duration) * 100) : 0 }}%;">
                                 </div>
@@ -70,15 +70,119 @@
     </div>
 @endsection
 
-@section('scripts')
-    <script>     // Video restrictions and progress tracking     const video = document.querySelector('video');     const progressFill = document.getElementById('progress-fill');     const progressText = document.getElementById('progress-text');     let lastWatchedTime = {{ $progress->watched_duration }};     const csrfToken = '{{ csrf_token() }}';     const videoId = {{ $video->id }};
-        // Update duration when metadata loads     video.addEventListener('loadedmetadata', function () {         if ({{ $video->duration }} == 0 && video.duration > 0) {             const xhr = new XMLHttpRequest();             xhr.open('POST', '/update-video-duration');             xhr.setRequestHeader('Content-Type', 'application/json');             xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);             xhr.setRequestHeader('Accept', 'application/json');             xhr.withCredentials = true;             xhr.send(JSON.stringify({                 video_id: videoId,                 duration: Math.floor(video.duration)             }));         }     });
-        // Disable skipping     video.addEventListener('seeking', function () {         video.currentTime = lastWatchedTime;     });
-        // Prevent mute     video.muted = false;     video.addEventListener('volumechange', function () {         if (video.muted || video.volume === 0) {             video.volume = 1;             video.muted = false;         }     });
-        // Track watch progress     video.addEventListener('timeupdate', function () {         lastWatchedTime = video.currentTime;
-        const xhr = new XMLHttpRequest(); xhr.open('POST', '/save-progress'); xhr.setRequestHeader('Content-Type', 'application/json'); xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken); xhr.setRequestHeader('Accept', 'application/json'); xhr.withCredentials = true; xhr.send(JSON.stringify({ video_id: videoId, watched_duration: video.currentTime }));
-        // Update progress bar and text         const duration = video.duration || 0;         if (duration > 0) {             const progress = (video.currentTime / duration) * 100;             progressFill.style.width = progress + '%';             progressText.textContent = Math.round(progress * 10) / 10 + '%';
-        // Check if completed (95% or within 10 seconds)             if (progress >= 95 || video.currentTime >= duration - 10) {                 const xhr2 = new XMLHttpRequest();                 xhr2.open('POST', '/save-progress');                 xhr2.setRequestHeader('Content-Type', 'application/json');                 xhr2.setRequestHeader('X-CSRF-TOKEN', csrfToken);                 xhr2.setRequestHeader('Accept', 'application/json');                 xhr2.withCredentials = true;                 xhr2.onload = function() {                     const result = JSON.parse(xhr2.responseText);                     if (result.completed && !{{ $progress->is_completed ? 'true' : 'false' }}) {                         alert("Video completed successfully!");                         location.reload();                     }                 };                 xhr2.send(JSON.stringify({ video_id: videoId, watched_duration: video.currentTime, completed: true }));             }         } else {             // Show time watched when duration is unknown             progressFill.style.width = '0%';             progressText.textContent = Math.floor(video.currentTime) + 's watched';         }     });
-        // Mark video completed     video.addEventListener('ended', function () {         console.log('Video ended');         // Send final progress update with completion flag         const xhr = new XMLHttpRequest();         xhr.open('POST', '/save-progress');         xhr.setRequestHeader('Content-Type', 'application/json');         xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);         xhr.setRequestHeader('Accept', 'application/json');         xhr.withCredentials = true;         xhr.onload = function() {             const data = JSON.parse(xhr.responseText);             console.log('Completion response:', data);             alert("Video completed successfully! Completed: " + data.completed);             location.reload(); // Refresh to show completion         };         xhr.onerror = function() {             console.error('Error completing video');             alert("Error completing video");         };         xhr.send(JSON.stringify({             video_id: videoId,             watched_duration: video.currentTime,             completed: true         }));     });
+@push('scripts')
+    <script>
+        // Video restrictions and progress tracking
+        const video = document.querySelector('video');
+        const csrfToken = '{{ csrf_token() }}';
+        const videoId = {{ $video->id }};
+        let lastWatchedTime = {{ $progress->watched_duration }};
+        let lastSavedTime = 0;
+        const saveInterval = 5000; // Save every 5 seconds
+        let completionAlertShown = false; // Prevent multiple completion alerts
+        let completionTriggered = false; // Prevent multiple completion saves
+
+        // Update duration when metadata loads
+        video.addEventListener('loadedmetadata', function () {
+            if ({{ $video->duration }} == 0 && video.duration > 0) {
+                fetch('/update-video-duration', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        video_id: videoId,
+                        duration: Math.floor(video.duration)
+                    })
+                }).catch(error => console.error('Duration update failed:', error));
+            }
+        });
+
+        // Disable skipping
+        video.addEventListener('seeking', function () {
+            if (video.currentTime > lastWatchedTime + 5) { // Allow small seeks
+                video.currentTime = lastWatchedTime;
+            }
+        });
+
+        // Prevent mute
+        video.muted = false;
+        video.addEventListener('volumechange', function () {
+            if (video.muted || video.volume === 0) {
+                video.volume = 1;
+                video.muted = false;
+            }
+        });
+
+        // Throttled progress saving
+        function saveProgress(currentTime, forceComplete = false) {
+            const now = Date.now();
+            if (!forceComplete && now - lastSavedTime < saveInterval) {
+                return; // Too soon
+            }
+            lastSavedTime = now;
+
+            fetch('/save-progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    video_id: videoId,
+                    watched_duration: currentTime,
+                    completed: forceComplete
+                })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.completed && !{{ $progress->is_completed ? 'true' : 'false' }} && !completionAlertShown) {
+                      completionAlertShown = true;
+                      alert("Video completed successfully!");
+                      location.reload();
+                  }
+              })
+              .catch(error => console.error('Progress save failed:', error));
+        }
+
+        // Track watch progress
+        video.addEventListener('timeupdate', function () {
+            const currentTime = video.currentTime;
+            lastWatchedTime = Math.max(lastWatchedTime, currentTime);
+
+            // Save progress periodically
+            saveProgress(currentTime);
+
+            // Check for completion only if not already completed and not already triggered
+            const isAlreadyCompleted = {{ $progress->is_completed ? 'true' : 'false' }};
+            if (!isAlreadyCompleted && !completionTriggered) {
+                const duration = video.duration || {{ $video->duration }};
+                if (duration > 0) {
+                    const progressPercent = (currentTime / duration) * 100;
+                    if (progressPercent >= 95 || currentTime >= duration - 10) {
+                        completionTriggered = true;
+                        saveProgress(currentTime, true);
+                    }
+                }
+            }
+        });
+
+        // Mark video completed on end
+        video.addEventListener('ended', function () {
+            if (!completionTriggered) {
+                completionTriggered = true;
+                saveProgress(video.duration || {{ $video->duration }}, true);
+            }
+        });
+
+        // Set initial time
+        video.addEventListener('loadeddata', function() {
+            console.log('Video loaded, duration:', video.duration, 'stored:', {{ $video->duration }});
+            if (lastWatchedTime > 0) {
+                video.currentTime = lastWatchedTime;
+            }
+        });
     </script>
-@endsection
+@endpush

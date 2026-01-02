@@ -209,28 +209,30 @@
 
             try {
                 // Upload the video with timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
+                const response = await new Promise((resolve, reject) => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
 
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', form.action);
-                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
-                xhr.setRequestHeader('Accept', 'application/json');
-                xhr.withCredentials = true;
-                xhr.timeout = 240000; // 4 minutes
-                xhr.onload = () => {
-                    clearTimeout(timeoutId);
-                    resolve(xhr);
-                };
-                xhr.onerror = () => {
-                    clearTimeout(timeoutId);
-                    reject(new Error('Network error'));
-                };
-                xhr.ontimeout = () => {
-                    clearTimeout(timeoutId);
-                    reject(new Error('Upload timeout - file may be too large or server is busy'));
-                };
-                xhr.send(formData);
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', form.action);
+                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
+                    xhr.setRequestHeader('Accept', 'application/json');
+                    xhr.withCredentials = true;
+                    xhr.timeout = 240000; // 4 minutes
+                    xhr.onload = () => {
+                        clearTimeout(timeoutId);
+                        resolve(xhr);
+                    };
+                    xhr.onerror = () => {
+                        clearTimeout(timeoutId);
+                        reject(new Error('Network error'));
+                    };
+                    xhr.ontimeout = () => {
+                        clearTimeout(timeoutId);
+                        reject(new Error('Upload timeout - file may be too large or server is busy'));
+                    };
+                    xhr.send(formData);
+                });
 
                 console.log('Response status:', response.status);
                 console.log('Response url:', response.responseURL);
@@ -250,7 +252,7 @@
                 }
 
                 // Check if upload was successful - be more lenient for production
-                const isSuccess = response.ok && (result.success === true || (result.success === undefined && result.message && result.message.includes('successfully')));
+                const isSuccess = (response.status >= 200 && response.status < 300) && (result.success === true || (result.success === undefined && result.message && result.message.includes('successfully')));
 
                 if (isSuccess) {
                     console.log('Upload successful, processing duration update...');
@@ -262,6 +264,7 @@
 
                     // Process video duration asynchronously (don't wait for it)
                     if (result.video_id) {
+                        console.log('Calling processVideoDurationAsync with', result.video_id);
                         processVideoDurationAsync(result.video_id);
                     }
 
@@ -269,7 +272,7 @@
                         location.reload();
                     }, 2000);
                 } else {
-                    console.error('Upload failed - response.ok:', response.ok, 'result.success:', result.success, 'result.message:', result.message, 'full result:', result);
+                    console.error('Upload failed - response.status:', response.status, 'result.success:', result.success, 'result.message:', result.message, 'full result:', result);
                     let errorMessage = result.message || 'Upload failed';
                     if (result.errors) {
                         errorMessage += ': ' + Object.values(result.errors).flat().join(', ');
@@ -289,21 +292,34 @@
             return new Promise((resolve) => {
                 const video = document.createElement('video');
                 video.preload = 'metadata';
+                video.style.display = 'none';
+                document.body.appendChild(video);
+
+                const timeout = setTimeout(() => {
+                    document.body.removeChild(video);
+                    resolve(0);
+                }, 5000); // 5 second timeout
 
                 video.onloadedmetadata = function () {
+                    clearTimeout(timeout);
+                    document.body.removeChild(video);
                     window.URL.revokeObjectURL(video.src);
                     resolve(Math.floor(video.duration));
                 };
 
                 video.onerror = function () {
+                    clearTimeout(timeout);
+                    document.body.removeChild(video);
                     resolve(0);
                 };
 
                 video.src = window.URL.createObjectURL(file);
+                video.load();
             });
         }
 
         async function updateVideoDuration(videoId, duration) {
+            console.log('updateVideoDuration called with', videoId, duration);
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]');
                 const response = await new Promise((resolve, reject) => {

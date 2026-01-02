@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Video;
 use App\Models\VideoProgress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class InternController extends Controller
 {
     public function dashboard()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $videos = Video::all()->map(function ($video) use ($user) {
             $progress = VideoProgress::where('user_id', $user->id)
                 ->where('video_id', $video->id)

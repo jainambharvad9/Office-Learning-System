@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use FFMpeg\FFMpeg;
 use FFMpeg\Coordinate\TimeCode;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -162,8 +163,10 @@ class AdminController extends Controller
     {
         try {
             $filePath = storage_path('app/public/' . $video->video_path);
+            \Log::info('Processing duration for video ' . $video->id . ', path: ' . $filePath);
 
             if (!file_exists($filePath)) {
+                \Log::error('Video file not found: ' . $filePath);
                 return response()->json([
                     'success' => false,
                     'message' => 'Video file not found'
@@ -171,9 +174,13 @@ class AdminController extends Controller
             }
 
             $duration = $this->getVideoDuration($filePath);
+            \Log::info('Extracted duration: ' . $duration . ' for video ' . $video->id);
 
             if ($duration > 0) {
                 $video->update(['duration' => $duration]);
+                \Log::info('Updated video ' . $video->id . ' with duration ' . $duration);
+            } else {
+                \Log::warning('Duration is 0 for video ' . $video->id);
             }
 
             return response()->json([
@@ -217,6 +224,8 @@ class AdminController extends Controller
     public function reports()
     {
         $reports = VideoProgress::with(['user', 'video'])
+            ->whereHas('user')
+            ->whereHas('video')
             ->get()
             ->map(function ($progress) {
                 $percentage = $progress->video->duration > 0
@@ -229,7 +238,8 @@ class AdminController extends Controller
                     'watch_percentage' => round($percentage, 1),
                     'watched_duration' => gmdate('i:s', $progress->watched_duration),
                     'total_duration' => gmdate('i:s', $progress->video->duration),
-                    'completion_status' => $progress->is_completed ? 'Completed' : 'In Progress'
+                    'completion_status' => $progress->is_completed ? 'Completed' : 'In Progress',
+                    'watch_count' => $progress->watch_count
                 ];
             });
 
@@ -247,7 +257,12 @@ class AdminController extends Controller
                 ];
             });
 
-        return view('admin.reports', compact('reports', 'userWatchCounts'));
+        // Calculate average completion
+        $totalProgress = VideoProgress::count();
+        $completedProgress = VideoProgress::where('is_completed', true)->count();
+        $averageCompletion = $totalProgress > 0 ? round(($completedProgress / $totalProgress) * 100, 1) : 0;
+
+        return view('admin.reports', compact('reports', 'userWatchCounts', 'averageCompletion'));
     }
 
     private function getVideoDuration($filePath)
@@ -255,30 +270,39 @@ class AdminController extends Controller
         try {
             // Try to use FFmpeg if available
             if (class_exists('FFMpeg\FFMpeg')) {
+                \Log::info('Trying FFmpeg for duration extraction');
                 $ffmpeg = FFMpeg::create();
                 $video = $ffmpeg->open($filePath);
                 $duration = $video->getFormat()->get('duration');
+                \Log::info('FFmpeg extracted duration: ' . $duration);
                 return (int) $duration;
             }
         } catch (\Exception $e) {
-            // FFmpeg not available or failed, use fallback
+            \Log::info('FFmpeg failed: ' . $e->getMessage());
         }
 
         // Fallback: Try to get duration using getID3 if available
         try {
             if (class_exists('getID3')) {
+                \Log::info('Trying getID3 for duration extraction');
                 $getID3 = new \getID3();
                 $fileInfo = $getID3->analyze($filePath);
                 if (isset($fileInfo['playtime_seconds'])) {
-                    return (int) $fileInfo['playtime_seconds'];
+                    $duration = (int) $fileInfo['playtime_seconds'];
+                    \Log::info('getID3 extracted duration: ' . $duration);
+                    return $duration;
+                } else {
+                    \Log::warning('getID3 did not find playtime_seconds in file info');
                 }
+            } else {
+                \Log::warning('getID3 class not found');
             }
         } catch (\Exception $e) {
-            // getID3 not available
+            \Log::error('getID3 failed: ' . $e->getMessage());
         }
 
-        // Last resort: Return 0 and let JavaScript handle it
-        // We'll create a method to update duration via AJAX
+        // Last resort: Return 0
+        \Log::warning('All duration extraction methods failed, returning 0');
         return 0;
     }
 
@@ -380,5 +404,14 @@ class AdminController extends Controller
             default:
                 return $size;
         }
+    }
+    public function deleteIntern($id)
+    {
+        $intern = User::findOrFail($id);
+        if ($intern->role !== 'intern') {
+            return redirect()->back()->with('error', 'Cannot delete non-intern user.');
+        }
+        $intern->delete();
+        return redirect()->back()->with('success', 'Intern deleted successfully.');
     }
 }
