@@ -356,7 +356,6 @@
                         duration: duration
                     }));
                 });
-
                 return JSON.parse(response.responseText);
             } catch (error) {
                 console.error('Duration update failed:', error);

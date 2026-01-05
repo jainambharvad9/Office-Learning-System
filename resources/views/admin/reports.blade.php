@@ -71,10 +71,10 @@
                                     <th
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
                                         Progress</th>
-                                    <th
+                                    {{-- <th
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Watch Count</th>
-                                    <th
+                                        Watch Count</th>--}}
+                                    <th 
                                         style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
                                         Status</th>
                                 </tr>
@@ -100,9 +100,9 @@
                                                     style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">{{ $report['watch_percentage'] }}%</span>
                                             </div>
                                         </td>
-                                        <td style="padding: 0.75rem; color: var(--text-primary); font-weight: 500;">
+                                        {{-- <td style="padding: 0.75rem; color: var(--text-primary); font-weight: 500;">
                                             {{ $report['watch_count'] }}
-                                        </td>
+                                        </td> --}}
                                         <td style="padding: 0.75rem;">
                                             <span
                                                 class="status-badge status-{{ strtolower(str_replace(' ', '-', $report['completion_status'])) }}">

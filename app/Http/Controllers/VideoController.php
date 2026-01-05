@@ -32,7 +32,7 @@ class VideoController extends Controller
         ]);
 
         $user = Auth::user();
-        \Log::info('SaveProgress called by user ' . $user->id . ' (' . $user->role . ') for video ' . $request->video_id . ', duration: ' . $request->watched_duration);
+        Log::info('SaveProgress called by user ' . $user->id . ' (' . $user->role . ') for video ' . $request->video_id . ', duration: ' . $request->watched_duration);
 
         $video = Video::findOrFail($request->video_id);
 
@@ -78,7 +78,7 @@ class VideoController extends Controller
         $oldDuration = $video->duration;
         $video->update(['duration' => (int) $request->duration]);
 
-        \Log::info("UpdateDuration: video_id={$request->video_id}, old_duration={$oldDuration}, new_duration={$request->duration}");
+        Log::info("UpdateDuration: video_id={$request->video_id}, old_duration={$oldDuration}, new_duration={$request->duration}");
 
         return response()->json(['success' => true]);
     }

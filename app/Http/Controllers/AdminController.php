@@ -130,7 +130,7 @@ class AdminController extends Controller
                 'duration' => 0
             ];
 
-            \Log::info('Upload response:', $responseData);
+            Log::info('Upload response:', $responseData);
 
             // Process duration asynchronously (don't block the response)
             try {
@@ -140,7 +140,7 @@ class AdminController extends Controller
                     // Could dispatch a job here in the future
                 }
             } catch (\Exception $e) {
-                \Log::warning('Async duration processing failed: ' . $e->getMessage());
+                Log::warning('Async duration processing failed: ' . $e->getMessage());
             }
 
             return response()->json($responseData);
@@ -168,10 +168,10 @@ class AdminController extends Controller
     {
         try {
             $filePath = storage_path('app/public/' . $video->video_path);
-            \Log::info('Processing duration for video ' . $video->id . ', path: ' . $filePath);
+            Log::info('Processing duration for video ' . $video->id . ', path: ' . $filePath);
 
             if (!file_exists($filePath)) {
-                \Log::error('Video file not found: ' . $filePath);
+                Log::error('Video file not found: ' . $filePath);
                 return response()->json([
                     'success' => false,
                     'message' => 'Video file not found'
@@ -179,13 +179,13 @@ class AdminController extends Controller
             }
 
             $duration = $this->getVideoDuration($filePath);
-            \Log::info('Extracted duration: ' . $duration . ' for video ' . $video->id);
+            Log::info('Extracted duration: ' . $duration . ' for video ' . $video->id);
 
             if ($duration > 0) {
                 $video->update(['duration' => $duration]);
-                \Log::info('Updated video ' . $video->id . ' with duration ' . $duration);
+                Log::info('Updated video ' . $video->id . ' with duration ' . $duration);
             } else {
-                \Log::warning('Duration is 0 for video ' . $video->id);
+                Log::warning('Duration is 0 for video ' . $video->id);
             }
 
             return response()->json([
@@ -194,14 +194,13 @@ class AdminController extends Controller
                 'formatted_duration' => gmdate('i:s', $duration)
             ]);
         } catch (\Exception $e) {
-            \Log::error('Video duration processing failed: ' . $e->getMessage());
+            Log::error('Video duration processing failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process video duration: ' . $e->getMessage()
             ], 500);
         }
     }
-
     public function manageInterns()
     {
         $interns = User::where('role', 'intern')->get();
@@ -266,7 +265,6 @@ class AdminController extends Controller
         $totalProgress = VideoProgress::count();
         $completedProgress = VideoProgress::where('is_completed', true)->count();
         $averageCompletion = $totalProgress > 0 ? round(($completedProgress / $totalProgress) * 100, 1) : 0;
-
         return view('admin.reports', compact('reports', 'userWatchCounts', 'averageCompletion'));
     }
 
@@ -275,39 +273,39 @@ class AdminController extends Controller
         try {
             // Try to use FFmpeg if available
             if (class_exists('FFMpeg\FFMpeg')) {
-                \Log::info('Trying FFmpeg for duration extraction');
+                Log::info('Trying FFmpeg for duration extraction');
                 $ffmpeg = FFMpeg::create();
                 $video = $ffmpeg->open($filePath);
                 $duration = $video->getFormat()->get('duration');
-                \Log::info('FFmpeg extracted duration: ' . $duration);
+                Log::info('FFmpeg extracted duration: ' . $duration);
                 return (int) $duration;
             }
         } catch (\Exception $e) {
-            \Log::info('FFmpeg failed: ' . $e->getMessage());
+            Log::info('FFmpeg failed: ' . $e->getMessage());
         }
 
         // Fallback: Try to get duration using getID3 if available
         try {
             if (class_exists('getID3')) {
-                \Log::info('Trying getID3 for duration extraction');
+                Log::info('Trying getID3 for duration extraction');
                 $getID3 = new \getID3();
                 $fileInfo = $getID3->analyze($filePath);
                 if (isset($fileInfo['playtime_seconds'])) {
                     $duration = (int) $fileInfo['playtime_seconds'];
-                    \Log::info('getID3 extracted duration: ' . $duration);
+                    Log::info('getID3 extracted duration: ' . $duration);
                     return $duration;
                 } else {
-                    \Log::warning('getID3 did not find playtime_seconds in file info');
+                    Log::warning('getID3 did not find playtime_seconds in file info');
                 }
             } else {
-                \Log::warning('getID3 class not found');
+                Log::warning('getID3 class not found');
             }
         } catch (\Exception $e) {
-            \Log::error('getID3 failed: ' . $e->getMessage());
+            Log::error('getID3 failed: ' . $e->getMessage());
         }
 
         // Last resort: Return 0
-        \Log::warning('All duration extraction methods failed, returning 0');
+        Log::warning('All duration extraction methods failed, returning 0');
         return 0;
     }
 
