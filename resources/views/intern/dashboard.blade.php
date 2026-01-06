@@ -46,6 +46,29 @@
                 </div>
             </div>
 
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="{{ route('intern.dashboard') }}" class="action-card active">
+                    <div class="action-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Videos</h3>
+                        <p>Watch training videos</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('intern.quizzes.index') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Quizzes</h3>
+                        <p>Test your knowledge</p>
+                    </div>
+                </a>
+            </div>
+
             <!-- Videos Grid -->
             <div class="section-header">
                 <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 600; margin: 0;">
@@ -183,6 +206,64 @@
 
         .category-badge i {
             font-size: 0.7rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .action-card:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .action-card.active {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .action-icon {
+            width: 3rem;
+            height: 3rem;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .action-content h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .action-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
         /* Custom select styling to match form-input */

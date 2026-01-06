@@ -43,11 +43,28 @@ Route::middleware(['auth'])->group(function () {
             ],
             'except' => ['show']
         ]);
+
+        // Quiz management routes
+        Route::resource('quizzes', \App\Http\Controllers\Admin\QuizController::class);
+        Route::get('quizzes/{quiz}/questions', [\App\Http\Controllers\Admin\QuestionController::class, 'index'])->name('questions.index');
+        Route::get('quizzes/{quiz}/questions/create', [\App\Http\Controllers\Admin\QuestionController::class, 'create'])->name('questions.create');
+        Route::post('quizzes/{quiz}/questions', [\App\Http\Controllers\Admin\QuestionController::class, 'store'])->name('questions.store');
+        Route::get('questions/{question}/edit', [\App\Http\Controllers\Admin\QuestionController::class, 'edit'])->name('questions.edit');
+        Route::put('questions/{question}', [\App\Http\Controllers\Admin\QuestionController::class, 'update'])->name('questions.update');
+        Route::delete('questions/{question}', [\App\Http\Controllers\Admin\QuestionController::class, 'destroy'])->name('questions.destroy');
     });
 
     // Intern routes
     Route::middleware(['intern'])->prefix('intern')->name('intern.')->group(function () {
         Route::get('/dashboard', [InternController::class, 'dashboard'])->name('dashboard');
+
+        // Quiz routes
+        Route::get('/quizzes', [\App\Http\Controllers\Intern\QuizController::class, 'index'])->name('quizzes.index');
+        Route::get('/quizzes/{quiz}', [\App\Http\Controllers\Intern\QuizController::class, 'show'])->name('quizzes.show');
+        Route::post('/quizzes/{quiz}/start', [\App\Http\Controllers\Intern\QuizController::class, 'start'])->name('quizzes.start');
+        Route::get('/attempts/{attempt}', [\App\Http\Controllers\Intern\QuizController::class, 'take'])->name('quizzes.take');
+        Route::post('/attempts/{attempt}/answer', [\App\Http\Controllers\Intern\QuizController::class, 'answer'])->name('quizzes.answer');
+        Route::get('/attempts/{attempt}/result', [\App\Http\Controllers\Intern\QuizController::class, 'result'])->name('quizzes.result');
     });
 
     // Video routes (accessible by interns)

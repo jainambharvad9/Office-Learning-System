@@ -107,7 +107,6 @@ p {
 
 .header-content {
     max-width: 1200px;
-    margin: 0 auto;
     padding: 0 2rem;
     display: flex;
     align-items: center;
@@ -335,6 +334,33 @@ p {
 
 .btn-secondary:hover {
     background: #059669;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 0.6rem 1.4rem;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btn-outline-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 2px solid var(--border);
+    padding: 0.6rem 1.4rem;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
 }
 
 /* Forms */

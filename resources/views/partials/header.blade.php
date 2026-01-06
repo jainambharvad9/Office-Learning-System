@@ -29,6 +29,9 @@
                                 class="{{ request()->routeIs('admin.categories*') ? 'active' : '' }}"><i
                                     class="fas fa-tags"></i>
                                 Categories</a></li>
+                        <li><a href="{{ route('admin.quizzes.index') }}"
+                                class="{{ request()->routeIs('admin.quizzes*') ? 'active' : '' }}"><i class="fas fa-brain"></i>
+                                Quizzes</a></li>
                         <li><a href="{{ route('admin.reports') }}"
                                 class="{{ request()->routeIs('admin.reports') ? 'active' : '' }}"><i
                                     class="fas fa-chart-bar"></i> Reports</a></li>
@@ -36,6 +39,9 @@
                         <li><a href="{{ route('intern.dashboard') }}"
                                 class="{{ request()->routeIs('intern.dashboard') ? 'active' : '' }}"><i class="fas fa-home"></i>
                                 Dashboard</a></li>
+                        <li><a href="{{ route('intern.quizzes.index') }}"
+                                class="{{ request()->routeIs('intern.quizzes*') ? 'active' : '' }}"><i class="fas fa-brain"></i>
+                                Quizzes</a></li>
                         <li><a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a></li>
                     @endif
                 @endif
