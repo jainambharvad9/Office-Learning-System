@@ -825,53 +825,58 @@ td {
         display: flex !important;
     }
 
+    .header-content {
+        flex-wrap: nowrap;
+        position: relative;
+    }
+
     .main-nav {
-        position: absolute;
-        top: 80px;
+        position: fixed;
+        top: var(--header-height);
         left: 0;
         right: 0;
-        background: var(--header-bg);
-        border-bottom: 1px solid var(--border);
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.4s ease, opacity 0.4s ease;
+        transition: max-height 0.3s ease-in-out;
         z-index: 999;
-        opacity: 0;
-        visibility: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
 
     .main-nav.mobile-menu-open {
-        max-height: 600px;
-        opacity: 1;
-        visibility: visible;
+        max-height: 500px;
     }
 
     .nav-links {
         flex-direction: column;
         gap: 0;
-        padding: 0;
+        padding: 0.5rem 0;
         margin: 0;
     }
 
     .nav-links li {
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-links li:last-child {
+        border-bottom: none;
     }
 
     .nav-links a {
         display: block;
         padding: 1rem 1.5rem;
-        color: var(--text-primary);
+        color: rgba(255, 255, 255, 0.95);
         text-decoration: none;
-        transition: background 0.2s ease;
+        transition: all 0.2s ease;
+        background: transparent;
     }
 
-    .nav-links a:hover {
-        background: var(--primary);
+    .nav-links a:hover,
+    .nav-links a.active {
+        background: rgba(255, 255, 255, 0.15);
         color: white;
-    }
-
-    .header-content {
-        flex-wrap: wrap;
+        padding-left: 2rem;
     }
 
     .flex-container {
@@ -1562,9 +1567,9 @@ td {
             padding: 0 1rem;
         }
 
-        .nav-links {
+        /* .nav-link s {
             display: none;
-        }
+        } */
 
         .brand-logo {
             font-size: 1.25rem;
@@ -2005,28 +2010,21 @@ video {
    RESPONSIVE DESIGN - MOBILE OPTIMIZATION
    ============================================ */
 
-/* Tablets and Below (768px and less) */
+/* Tablets and Below (768px and less) - Additional Styles */
 @media (max-width: 768px) {
-
-    /* Adjust header layout */
-    .header-content {
-        padding: 0 1rem;
-        justify-content: space-between;
-    }
 
     .logo-section {
         min-width: auto;
     }
 
     .brand-logo {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
     }
 
     .brand-tagline {
         display: none;
     }
 
-    /* Stack header actions vertically if needed */
     .header-actions {
         gap: 0.5rem;
     }
@@ -2106,10 +2104,10 @@ video {
     }
 
     /* Ensure navbar is completely hidden */
-    .main-nav,
+    /* .main-nav,
     .main-nav * {
         display: none !important;
-    }
+    } */
 
     /* Header actions */
     .header-actions {
