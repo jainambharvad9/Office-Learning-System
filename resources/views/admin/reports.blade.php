@@ -12,7 +12,7 @@
             </div>
 
             <!-- Summary Statistics -->
-            <div class="stats-grid" style="margin-bottom: 2rem;">
+            {{-- <div class="stats-grid" style="margin-bottom: 2rem;">
                 <div class="stat-card">
                     <div class="stat-icon">
                         <i class="fas fa-users"></i>
@@ -44,7 +44,7 @@
                     <div class="stat-number">{{ $averageCompletion }}%</div>
                     <div class="stat-label">Avg Completion</div>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Detailed Reports Table -->
             <div class="card">
