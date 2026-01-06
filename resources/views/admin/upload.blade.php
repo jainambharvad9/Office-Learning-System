@@ -145,7 +145,7 @@
                         <div class="form-group">
                             <label for="category_id" class="form-label">Category</label>
                             <select id="category_id" name="category_id" class="form-input">
-                                <option value="">-- Select Category (Optional) --</option>
+                                <option value="">-- Select Category --</option>
                                 @foreach($categories ?? [] as $category)
                                     <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
                                         {{ $category->name }}
@@ -443,6 +443,105 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        /* Dark mode select styling */
+        select.form-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            cursor: pointer;
+        }
+
+        select.form-input:focus {
+            outline: 0;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+
+        /* Ensure options are visible in dropdown */
+        select.form-input option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+        }
+
+        /* Force option text visibility in dark mode */
+        select.form-input option:checked {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Light mode fallback */
+        @media (prefers-color-scheme: light) {
+            select.form-input {
+                background-color: white;
+                color: #333;
+            }
+
+            select.form-input option {
+                background-color: white;
+                color: #333;
+            }
+
+            select.form-input option:checked {
+                background: var(--primary);
+                color: white;
+            }
+        }
+
+        /* Dark mode specific */
+        @media (prefers-color-scheme: dark) {
+            select.form-input {
+                background-color: #1e293b;
+                color: #f1f5f9;
+            }
+
+            select.form-input option {
+                background-color: #1e293b;
+                color: #f1f5f9;
+            }
+
+            select.form-input option:checked {
+                background: #3b82f6;
+                color: white;
+            }
+        }
+
+        /* Override for data-theme attribute (manual theme toggle) */
+        html[data-theme="dark"] select.form-input {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+
+        html[data-theme="dark"] select.form-input option {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+
+        html[data-theme="dark"] select.form-input option:checked {
+            background: #3b82f6;
+            color: white;
+        }
+
+        html[data-theme="light"] select.form-input {
+            background-color: white;
+            color: #333;
+        }
+
+        html[data-theme="light"] select.form-input option {
+            background-color: white;
+            color: #333;
+        }
+
+        html[data-theme="light"] select.form-input option:checked {
+            background: var(--primary);
+            color: white;
         }
     </style>
 @endsection
