@@ -190,16 +190,19 @@ class QuizController extends Controller
      */
     private function completeQuiz(QuizAttempt $attempt)
     {
+        // // Eager-load answers with their questions to avoid N+1 queries
+        // $attempt->load(['answers.question']);
+
         $answers = $attempt->answers;
         $correctAnswers = $answers->where('is_correct', true)->count();
         $totalScore = $answers->sum(function ($answer) {
             return $answer->is_correct ? $answer->question->points : 0;
         });
 
-        // Calculate time taken in seconds
+        // Calculate time taken in seconds (always positive)
         $timeTaken = null;
         if ($attempt->started_at) {
-            $timeTaken = (int) now()->diffInSeconds($attempt->started_at);
+            $timeTaken = abs((int) \Carbon\Carbon::parse($attempt->started_at)->diffInSeconds(now()));
         }
 
         $attempt->update([

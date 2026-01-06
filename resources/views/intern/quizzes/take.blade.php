@@ -361,12 +361,19 @@
 @push('scripts')
     <script>
         @if($quiz->time_limit)
-            let timeLeft = {{ $quiz->time_limit * 60 }}; // Convert to seconds
+            // Calculate elapsed time from server start time
+            const startedAt = new Date('{{ \Carbon\Carbon::parse($attempt->started_at)->toIso8601String() }}');
+            const totalTimeSeconds = {{ $quiz->time_limit * 60 }};
             const timerElement = document.getElementById('timer');
+            let timerInterval;
 
             function updateTimer() {
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
+                const now = new Date();
+                const elapsedSeconds = Math.floor((now - startedAt) / 1000);
+                const timeLeft = totalTimeSeconds - elapsedSeconds;
+
+                const minutes = Math.floor(Math.max(0, timeLeft) / 60);
+                const seconds = Math.max(0, timeLeft) % 60;
                 timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
                 if (timeLeft <= 300) { // 5 minutes warning
@@ -374,39 +381,40 @@
                 }
 
                 if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
                     // Auto-submit the quiz
                     document.getElementById('answerForm').submit();
-                } else {
-                    timeLeft--;
                 }
             }
 
-            setInterval(updateTimer, 1000);
-            updateTimer();
+            updateTimer(); // Call once immediately
+            timerInterval = setInterval(updateTimer, 1000);
         @endif
 
-        // Handle radio button selection
-        document.querySelectorAll('.option-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (e.target.tagName !== 'INPUT') {
-                    const radio = this.querySelector('input[type="radio"]');
-                    if (radio) {
-                        radio.checked = true;
-                        radio.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            });
-
-            const radio = item.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.addEventListener('change', function() {
-                    // Update UI when radio changes
-                    document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
-                    if (this.checked) {
-                        this.closest('.option-item').classList.add('selected');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle radio button selection
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        const radio = this.querySelector('input[type="radio"]');
+                        if (radio) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
                     }
                 });
-            }
+
+                const radio = item.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.addEventListener('change', function() {
+                        // Update UI when radio changes
+                        document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+                        if (this.checked) {
+                            this.closest('.option-item').classList.add('selected');
+                        }
+                    });
+                }
+            });
         });
 
         function goToQuestion(questionIndex) {
@@ -423,19 +431,5 @@
             document.body.appendChild(form);
             form.submit();
         }
-
-        // Handle option selection
-        document.querySelectorAll('.option-item').forEach(item => {
-            item.addEventListener('click', function() {
-                // Remove selected class from all options
-                document.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
-
-                // Add selected class to clicked option
-                this.classList.add('selected');
-
-                // Check the radio button
-                this.querySelector('input[type="radio"]').checked = true;
-            });
-        });
     </script>
 @endpush
