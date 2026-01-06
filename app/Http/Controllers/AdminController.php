@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Video;
 use App\Models\VideoProgress;
+use App\Models\VideoCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
@@ -41,6 +42,12 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('totalInterns', 'totalVideos', 'completedVideos', 'internProgress'));
     }
 
+    public function showUploadForm()
+    {
+        $categories = VideoCategory::active()->get();
+        return view('admin.upload', compact('categories'));
+    }
+
     public function uploadVideo(Request $request)
     {
         // Check PHP limits before processing
@@ -75,7 +82,8 @@ class AdminController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'video' => 'required|file|mimes:mp4|max:153600', // 150MB max (in KB)
+                'category_id' => 'nullable|exists:video_categories,id',
+                'video' => 'required|file|mimes:mp4|max:512000', // 500MB max (in KB)
             ]);
 
             // Check if file was uploaded successfully
@@ -119,6 +127,7 @@ class AdminController extends Controller
             $video = Video::create([
                 'title' => $request->title,
                 'description' => $request->description,
+                'category_id' => $request->category_id,
                 'video_path' => $videoPath,
                 'duration' => 0, // Will be updated asynchronously
             ]);
@@ -390,5 +399,59 @@ class AdminController extends Controller
         }
         $intern->delete();
         return redirect()->back()->with('success', 'Intern deleted successfully.');
+    }
+
+    // Video Category CRUD Methods
+    public function index()
+    {
+        $categories = VideoCategory::withCount('videos')->get();
+        return view('admin.categories.index', compact('categories'));
+    }
+
+    public function create()
+    {
+        return view('admin.categories.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:video_categories,name',
+            'description' => 'nullable|string|max:1000',
+            'is_active' => 'boolean'
+        ]);
+
+        VideoCategory::create($request->all());
+
+        return redirect()->route('admin.categories')->with('success', 'Category created successfully.');
+    }
+
+    public function edit(VideoCategory $category)
+    {
+        return view('admin.categories.edit', compact('category'));
+    }
+
+    public function update(Request $request, VideoCategory $category)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:video_categories,name,' . $category->id,
+            'description' => 'nullable|string|max:1000',
+            'is_active' => 'boolean'
+        ]);
+
+        $category->update($request->all());
+
+        return redirect()->route('admin.categories')->with('success', 'Category updated successfully.');
+    }
+
+    public function destroy(VideoCategory $category)
+    {
+        if ($category->videos()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete category with existing videos.');
+        }
+
+        $category->delete();
+
+        return redirect()->route('admin.categories')->with('success', 'Category deleted successfully.');
     }
 }

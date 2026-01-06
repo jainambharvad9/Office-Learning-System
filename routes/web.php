@@ -24,15 +24,25 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/upload-video', [AdminController::class, 'uploadVideo'])->name('upload.video');
         Route::post('/update-video-duration', [AdminController::class, 'updateVideoDuration'])->name('update.video.duration');
         Route::post('/process-video-duration/{video}', [AdminController::class, 'processVideoDuration'])->name('process.video.duration');
-        Route::get('/upload-video', function () {
-            return view('admin.upload');
-        })->name('upload.form');
+        Route::get('/upload-video', [AdminController::class, 'showUploadForm'])->name('upload.form');
         Route::get('/videos', [AdminController::class, 'manageVideos'])->name('videos');
         Route::delete('/videos/{id}', [AdminController::class, 'deleteVideo'])->name('videos.delete');
         Route::get('/interns', [AdminController::class, 'manageInterns'])->name('interns');
         Route::post('/interns/register', [AdminController::class, 'registerIntern'])->name('interns.register');
         Route::delete('/interns/{id}', [AdminController::class, 'deleteIntern'])->name('interns.delete');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::resource('categories', AdminController::class, [
+            'parameters' => ['categories' => 'category'],
+            'names' => [
+                'index' => 'categories',
+                'create' => 'categories.create',
+                'store' => 'categories.store',
+                'edit' => 'categories.edit',
+                'update' => 'categories.update',
+                'destroy' => 'categories.destroy'
+            ],
+            'except' => ['show']
+        ]);
     });
 
     // Intern routes

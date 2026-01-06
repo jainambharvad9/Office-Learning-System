@@ -143,6 +143,21 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="category_id" class="form-label">Category</label>
+                            <select id="category_id" name="category_id" class="form-input">
+                                <option value="">-- Select Category (Optional) --</option>
+                                @foreach($categories ?? [] as $category)
+                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
+                                <i class="fas fa-info-circle"></i> Categorize your video for better organization
+                            </small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="video" class="form-label">Video File <span
                                     style="color: var(--error);">*</span></label>
                             <input type="file" id="video" name="video" accept=".mp4" required class="form-input">

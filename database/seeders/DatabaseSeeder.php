@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed video categories first
+        $this->call(VideoCategorySeeder::class);
+
         // Create admin user
         User::create([
             'name' => 'Admin User',

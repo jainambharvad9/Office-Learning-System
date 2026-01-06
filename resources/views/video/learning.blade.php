@@ -16,7 +16,7 @@
                     <div style="max-width: 900px; margin: 0 auto;">
                         <div
                             style="position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xl); background: #000;">
-                            <video id="videoElement" controls controlsList="nodownload"
+                            <video id="videoElement" controls controlsList="nodownload noplaybackrate"
                                 style="width: 100%; display: block;">
                                 <source src="{{ asset('storage/' . $video->video_path) }}" type="video/mp4">
                                 Your browser does not support the video tag.
@@ -30,13 +30,13 @@
                                 <span style="font-weight: 600; color: var(--text-primary);">Your Progress</span>
                                 <span id="progress-text" style="color: var(--text-secondary); font-size: 0.9rem;">
                                     @if($video->duration > 0)
-                                        {{ round(($progress->watched_duration / $video->duration) * 100, 1) }}%
+                                        {{ gmdate('i:s', $progress->watched_duration) }} / {{ gmdate('i:s', $video->duration) }}
                                     @else
                                         {{ $progress->watched_duration }}s watched
                                     @endif
                                 </span>
-                            </div> 
-                             <div class="progress-bar">
+                            </div>
+                            <div class="progress-bar">
                                 <div class="progress-fill" id="progress-fill"
                                     style="width: {{ $video->duration > 0 ? min(100, ($progress->watched_duration / $video->duration) * 100) : 0 }}%;">
                                 </div>
@@ -68,6 +68,52 @@
         </div>
     </div>
     </div>
+@endsection
+
+@section('styles')
+    <style>
+        /* Ensure video controls are visible and properly styled */
+        video::-webkit-media-controls-panel {
+            background: rgba(0, 0, 0, 0.7) !important;
+            border-radius: 0 0 var(--radius) var(--radius) !important;
+        }
+
+        video::-webkit-media-controls-play-button,
+        video::-webkit-media-controls-current-time-display,
+        video::-webkit-media-controls-time-remaining-display,
+        video::-webkit-media-controls-timeline,
+        video::-webkit-media-controls-volume-slider,
+        video::-webkit-media-controls-mute-button,
+        video::-webkit-media-controls-fullscreen-button {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Hide download and playback rate controls */
+        video::-webkit-media-controls-playback-rate-button,
+        video::-webkit-media-controls-download-button {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Firefox video controls */
+        video::-moz-media-controls-panel {
+            background: rgba(0, 0, 0, 0.7) !important;
+        }
+
+        /* General video styling */
+        #videoElement {
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-xl);
+        }
+
+        #videoElement:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+    </style>
 @endsection
 
 @push('scripts')
@@ -137,14 +183,22 @@
                     completed: forceComplete
                 })
             }).then(response => response.json())
-              .then(data => {
-                  if (data.completed && !{{ $progress->is_completed ? 'true' : 'false' }} && !completionAlertShown) {
-                      completionAlertShown = true;
-                      alert("Video completed successfully!");
-                      location.reload();
-                  }
-              })
-              .catch(error => console.error('Progress save failed:', error));
+                .then(data => {
+                    // Only show completion alert when video is fully completed (not on 95% completion)
+                    if (data.completed && !{{ $progress->is_completed ? 'true' : 'false' }} && !completionAlertShown && forceComplete) {
+                        completionAlertShown = true;
+                        alert("Video completed successfully!");
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Progress save failed:', error));
+        }
+
+        // Helper function to format time
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
         // Track watch progress
@@ -155,16 +209,18 @@
             // Save progress periodically
             saveProgress(currentTime);
 
-            // Check for completion only if not already completed and not already triggered
-            const isAlreadyCompleted = {{ $progress->is_completed ? 'true' : 'false' }};
-            if (!isAlreadyCompleted && !completionTriggered) {
-                const duration = video.duration || {{ $video->duration }};
-                if (duration > 0) {
-                    const progressPercent = (currentTime / duration) * 100;
-                    if (progressPercent >= 95 || currentTime >= duration - 10) {
-                        completionTriggered = true;
-                        saveProgress(currentTime, true);
-                    }
+            // Update progress bar
+            const duration = video.duration || {{ $video->duration }};
+            if (duration > 0) {
+                const progressPercent = (currentTime / duration) * 100;
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+
+                if (progressFill) {
+                    progressFill.style.width = Math.min(100, progressPercent) + '%';
+                }
+                if (progressText) {
+                    progressText.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
                 }
             }
         });
@@ -178,7 +234,7 @@
         });
 
         // Set initial time
-        video.addEventListener('loadeddata', function() {
+        video.addEventListener('loadeddata', function () {
             console.log('Video loaded, duration:', video.duration, 'stored:', {{ $video->duration }});
             if (lastWatchedTime > 0) {
                 video.currentTime = lastWatchedTime;

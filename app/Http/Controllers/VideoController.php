@@ -55,10 +55,15 @@ class VideoController extends Controller
             Log::info("SaveProgress: calculated isCompleted={$isCompleted}");
         }
 
-        if ($isCompleted) {
+        if ($isCompleted && $completed) {
+            // Only increment watch count when explicitly marked as completed (forceComplete = true)
             $progress->increment('watch_count');
             $progress->update(['is_completed' => true]);
-            Log::info("SaveProgress: marked as completed, watch_count incremented");
+            Log::info("SaveProgress: marked as completed, watch_count incremented to " . $progress->watch_count);
+        } elseif ($isCompleted) {
+            // Just mark as completed without incrementing watch count
+            $progress->update(['is_completed' => true]);
+            Log::info("SaveProgress: marked as completed without incrementing watch count");
         }
 
         return response()->json([

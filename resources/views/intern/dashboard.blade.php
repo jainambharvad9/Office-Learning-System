@@ -57,6 +57,33 @@
                 </p>
             </div>
 
+            <!-- Category Filter -->
+            @if($categories->count() > 0)
+                <div style="margin-bottom: 2rem;">
+                    <form method="GET" style="display: inline;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <label for="category" style="font-weight: 500; color: var(--text-primary); margin: 0;">
+                                <i class="fas fa-filter"></i> Filter by Category:
+                            </label>
+                            <select name="category" id="category" class="form-input" style="width: auto; min-width: 200px;"
+                                onchange="this.form.submit()">
+                                <option value="">All Categories</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ $selectedCategory && $selectedCategory->id == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }} ({{ $category->videos_count }} videos)
+                                    </option>
+                                @endforeach
+                            </select>
+                            @if($selectedCategory)
+                                <a href="{{ route('intern.dashboard') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Clear Filter
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            @endif
+
             <div class="video-grid">
                 @foreach($videos as $video)
                     <div class="video-card-wrapper">
@@ -91,6 +118,13 @@
                                             class="status-dot status-{{ strtolower(str_replace(' ', '-', $video['status'])) }}"></span>
                                         <span class="status-text">{{ $video['status'] }}</span>
                                     </div>
+
+                                    @if($video['category'] !== 'Uncategorized')
+                                        <div class="category-badge">
+                                            <i class="fas fa-tag"></i>
+                                            {{ $video['category'] }}
+                                        </div>
+                                    @endif
 
                                     @if(!$video['locked'] && $video['progress'] > 0)
                                         <div class="progress-indicator">
@@ -130,4 +164,47 @@
             @endif
         </div>
     </div>
+@endsection
+
+@section('styles')
+    <style>
+        .category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .category-badge i {
+            font-size: 0.7rem;
+        }
+
+        /* Custom select styling to match form-input */
+        select.form-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        select.form-input:focus {
+            outline: 0;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+
+        select.form-input option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+    </style>
 @endsection

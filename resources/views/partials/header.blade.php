@@ -25,6 +25,10 @@
                         <li><a href="{{ route('admin.videos') }}"
                                 class="{{ request()->routeIs('admin.videos') ? 'active' : '' }}"><i class="fas fa-film"></i>
                                 Videos</a></li>
+                        <li><a href="{{ route('admin.categories') }}"
+                                class="{{ request()->routeIs('admin.categories*') ? 'active' : '' }}"><i
+                                    class="fas fa-tags"></i>
+                                Categories</a></li>
                         <li><a href="{{ route('admin.reports') }}"
                                 class="{{ request()->routeIs('admin.reports') ? 'active' : '' }}"><i
                                     class="fas fa-chart-bar"></i> Reports</a></li>
