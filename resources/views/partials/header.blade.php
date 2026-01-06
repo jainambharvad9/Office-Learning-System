@@ -48,6 +48,11 @@
             </ul>
         </nav>
 
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
         <div class="header-actions">
             <!-- Dark Mode Toggle -->
             <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
@@ -80,3 +85,45 @@
         </div>
     </div>
 </header>
+
+<script>
+    // Mobile Menu Toggle
+    document.addEventListener('DOMContentLoaded', function () {
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mainNav = document.querySelector('.main-nav');
+
+        if (mobileMenuToggle && mainNav) {
+            mobileMenuToggle.addEventListener('click', function () {
+                mainNav.classList.toggle('mobile-menu-open');
+                mobileMenuToggle.classList.toggle('active');
+            });
+
+            // Close menu when a link is clicked
+            const navLinks = mainNav.querySelectorAll('a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    mainNav.classList.remove('mobile-menu-open');
+                    mobileMenuToggle.classList.remove('active');
+                });
+            });
+        }
+    });
+
+    // User Menu Toggle
+    function toggleUserMenu() {
+        const userDropdown = document.getElementById('userDropdown');
+        if (userDropdown) {
+            userDropdown.classList.toggle('show');
+        }
+    }
+
+    // Profile placeholder
+    function showProfile() {
+        alert('Profile page coming soon!');
+    }
+
+    // Settings placeholder
+    function showSettings() {
+        alert('Settings page coming soon!');
+    }
+</script>
