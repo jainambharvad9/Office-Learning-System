@@ -16,8 +16,7 @@
                     <h3 class="h5 mb-0">Question Details</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('admin.questions.store', $quiz) }}"
-                        id="questionForm">
+                    <form method="POST" action="{{ route('admin.questions.store', $quiz) }}" id="questionForm">
                         @csrf
 
                         <div class="mb-3">
@@ -74,8 +73,7 @@
                             <button type="submit" class="btn btn-success" id="saveAddBtn">
                                 <i class="fas fa-plus"></i> Save & Add Another
                             </button>
-                            <a href="{{ route('admin.questions.index', $quiz) }}"
-                                class="btn btn-outline-secondary">
+                            <a href="{{ route('admin.questions.index', $quiz) }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
                         </div>
@@ -88,15 +86,33 @@
 
 @section('styles')
     <style>
+        /* Dark mode support for text-muted */
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Dark mode support for form labels */
+        .form-label,
+        label.form-label {
+            color: var(--text-primary) !important;
+        }
+
+        /* Dark mode support for section headings */
+        .h4.fw-semibold,
+        .h5.fw-semibold {
+            color: var(--text-primary) !important;
+        }
+
         .option-item {
             display: flex;
             align-items: center;
             gap: 1rem;
             margin-bottom: 1rem;
             padding: 1rem;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 0.375rem;
+            color: var(--text-primary);
         }
 
         .option-input {
@@ -119,12 +135,13 @@
             margin: 0;
             cursor: pointer;
             font-weight: 500;
+            color: var(--text-primary);
         }
 
         .remove-option {
             background: none;
             border: none;
-            color: #dc3545;
+            color: var(--error);
             cursor: pointer;
             padding: 0.5rem;
             border-radius: 0.25rem;
@@ -132,8 +149,8 @@
         }
 
         .remove-option:hover {
-            background: rgba(220, 53, 69, 0.1);
-            color: #bb2d3b;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
         }
 
         #trueFalseOptions {
@@ -156,21 +173,21 @@
 
             // True/False options
             const trueFalseOptions = `
-                    <div id="trueFalseOptions">
-                        <div class="option-item">
-                            <div class="option-radio">
-                                <input type="radio" name="correct_option" value="1" class="form-check-input" required>
-                                <label class="form-check-label">True</label>
+                        <div id="trueFalseOptions">
+                            <div class="option-item">
+                                <div class="option-radio">
+                                    <input type="radio" name="correct_option" value="1" class="form-check-input" required>
+                                    <label class="form-check-label">True</label>
+                                </div>
+                            </div>
+                            <div class="option-item">
+                                <div class="option-radio">
+                                    <input type="radio" name="correct_option" value="2" class="form-check-input" required>
+                                    <label class="form-check-label">False</label>
+                                </div>
                             </div>
                         </div>
-                        <div class="option-item">
-                            <div class="option-radio">
-                                <input type="radio" name="correct_option" value="2" class="form-check-input" required>
-                                <label class="form-check-label">False</label>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    `;
 
             function updateOptionsDisplay() {
                 const questionType = questionTypeSelect.value;
@@ -191,19 +208,19 @@
             function addOption() {
                 optionCount++;
                 const optionHtml = `
-                        <div class="option-item" data-option-id="${optionCount}">
-                            <div class="option-input">
-                                <input type="text" name="options[${optionCount}][text]" class="form-control" placeholder="Option ${optionCount}" required>
+                            <div class="option-item" data-option-id="${optionCount}">
+                                <div class="option-input">
+                                    <input type="text" name="options[${optionCount}][text]" class="form-control" placeholder="Option ${optionCount}" required>
+                                </div>
+                                <div class="option-radio">
+                                    <input type="radio" name="correct_option" value="${optionCount}" class="form-check-input" required>
+                                    <label class="form-check-label">Correct</label>
+                                </div>
+                                <button type="button" class="remove-option" onclick="removeOption(${optionCount})" title="Remove option">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
-                            <div class="option-radio">
-                                <input type="radio" name="correct_option" value="${optionCount}" class="form-check-input" required>
-                                <label class="form-check-label">Correct</label>
-                            </div>
-                            <button type="button" class="remove-option" onclick="removeOption(${optionCount})" title="Remove option">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
+                        `;
                 optionsContainer.insertAdjacentHTML('beforeend', optionHtml);
             }
 
@@ -224,12 +241,12 @@
             }
 
             // Handle Save & Add Another button
-            saveAddBtn.addEventListener('click', function(e) {
+            saveAddBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 // Submit via AJAX to avoid page reload
                 const formData = new FormData(questionForm);
-                
+
                 fetch(questionForm.action, {
                     method: 'POST',
                     body: formData,
@@ -238,30 +255,30 @@
                         'Accept': 'application/json'
                     }
                 })
-                .then(response => {
-                    if (response.ok) {
-                        // Show success message
-                        const alertDiv = document.createElement('div');
-                        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                        alertDiv.innerHTML = `
-                            <i class="fas fa-check-circle"></i> Question saved successfully! Adding new question...
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        `;
-                        document.querySelector('.card').insertAdjacentElement('beforebegin', alertDiv);
-                        
-                        // Reset form for next question
-                        setTimeout(() => {
-                            resetForm();
-                            alertDiv.remove();
-                        }, 1500);
-                    } else {
+                    .then(response => {
+                        if (response.ok) {
+                            // Show success message
+                            const alertDiv = document.createElement('div');
+                            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                            alertDiv.innerHTML = `
+                                <i class="fas fa-check-circle"></i> Question saved successfully! Adding new question...
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                            document.querySelector('.card').insertAdjacentElement('beforebegin', alertDiv);
+
+                            // Reset form for next question
+                            setTimeout(() => {
+                                resetForm();
+                                alertDiv.remove();
+                            }, 1500);
+                        } else {
+                            alert('Error saving question');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
                         alert('Error saving question');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error saving question');
-                });
+                    });
             });
 
             addOptionBtn.addEventListener('click', addOption);
