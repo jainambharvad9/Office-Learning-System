@@ -76,6 +76,11 @@
                                             </td>
                                             <td style="padding: 0.75rem;">
                                                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                                    <a href="{{ route('admin.quizzes.results', $quiz) }}"
+                                                        class="btn btn-sm btn-primary"
+                                                        style="background: var(--success); border-color: var(--success);">
+                                                        <i class="fas fa-chart-bar"></i> Results
+                                                    </a>
                                                     <a href="{{ route('admin.questions.index', $quiz) }}"
                                                         class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-question"></i> Questions

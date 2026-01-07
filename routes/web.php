@@ -46,6 +46,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Quiz management routes
         Route::resource('quizzes', \App\Http\Controllers\Admin\QuizController::class);
+        Route::get('quizzes/{quiz}/results', [\App\Http\Controllers\Admin\QuizController::class, 'results'])->name('quizzes.results');
+        Route::get('attempts/{attempt}/detail', [\App\Http\Controllers\Admin\QuizController::class, 'attemptDetail'])->name('quizzes.attempt-detail');
         Route::get('quizzes/{quiz}/questions', [\App\Http\Controllers\Admin\QuestionController::class, 'index'])->name('questions.index');
         Route::get('quizzes/{quiz}/questions/create', [\App\Http\Controllers\Admin\QuestionController::class, 'create'])->name('questions.create');
         Route::post('quizzes/{quiz}/questions', [\App\Http\Controllers\Admin\QuestionController::class, 'store'])->name('questions.store');
