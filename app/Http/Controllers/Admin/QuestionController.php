@@ -53,11 +53,11 @@ class QuestionController extends Controller
 
         // Create options
         if ($validated['question_type'] === 'multiple_choice') {
-            foreach ($validated['options'] as $index => $option) {
+            foreach ($validated['options'] as $optionId => $option) {
                 $question->options()->create([
                     'option_text' => $option['text'],
-                    'is_correct' => ($index + 1) == $validated['correct_option'],
-                    'order' => $index + 1
+                    'is_correct' => $optionId == $validated['correct_option'],
+                    'order' => $optionId
                 ]);
             }
         } else {
@@ -69,6 +69,11 @@ class QuestionController extends Controller
         return redirect()->route('admin.questions.index', $quiz)
             ->with('success', 'Question added successfully!');
     }
+
+
+
+
+
 
     /**
      * Display the specified resource.
@@ -114,11 +119,11 @@ class QuestionController extends Controller
 
         // Create new options
         if ($validated['question_type'] === 'multiple_choice') {
-            foreach ($validated['options'] as $index => $option) {
+            foreach ($validated['options'] as $optionId => $option) {
                 $question->options()->create([
                     'option_text' => $option['text'],
-                    'is_correct' => ($index + 1) == $validated['correct_option'],
-                    'order' => $index + 1
+                    'is_correct' => $optionId == $validated['correct_option'],
+                    'order' => $optionId
                 ]);
             }
         } else {
