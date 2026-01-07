@@ -143,8 +143,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="category_id" class="form-label">Category</label>
-                            <select id="category_id" name="category_id" class="form-input">
+                            <label for="category_id" class="form-label">Category <span style="color: var(--error);">*</span></label>
+                            <select id="category_id" name="category_id" class="form-input" required>
                                 <option value="">-- Select Category --</option>
                                 @foreach($categories ?? [] as $category)
                                     <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
