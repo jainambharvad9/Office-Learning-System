@@ -70,11 +70,6 @@ class QuestionController extends Controller
             ->with('success', 'Question added successfully!');
     }
 
-
-
-
-
-
     /**
      * Display the specified resource.
      */

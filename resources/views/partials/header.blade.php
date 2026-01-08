@@ -42,7 +42,7 @@
                         <li><a href="{{ route('intern.quizzes.index') }}"
                                 class="{{ request()->routeIs('intern.quizzes*') ? 'active' : '' }}"><i class="fas fa-brain"></i>
                                 Quizzes</a></li>
-                        <li><a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a></li>
+                        {{-- <li><a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a></li> --}}
                     @endif
                 @endif
             </ul>
@@ -70,8 +70,8 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="user-dropdown" id="userDropdown">
-                        <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a>
-                        <a href="#" onclick="showSettings()"><i class="fas fa-cog"></i> Settings</a>
+                        {{-- <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#" onclick="showSettings()"><i class="fas fa-cog"></i> Settings</a> --}}
                         <hr>
                         <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                             @csrf
