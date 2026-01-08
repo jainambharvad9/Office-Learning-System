@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
     // Intern routes
     Route::middleware(['intern'])->prefix('intern')->name('intern.')->group(function () {
         Route::get('/dashboard', [InternController::class, 'dashboard'])->name('dashboard');
+        Route::get('/search-videos', [InternController::class, 'searchVideos'])->name('search.videos');
 
         // Quiz routes
         Route::get('/quizzes', [\App\Http\Controllers\Intern\QuizController::class, 'index'])->name('quizzes.index');
