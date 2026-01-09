@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Video extends Model
 {
-    protected $fillable = ['title', 'description', 'video_path', 'duration', 'category_id'];
+    protected $fillable = ['title', 'description', 'video_path', 'duration', 'category_id', 'part_number'];
 
     public function progress()
     {

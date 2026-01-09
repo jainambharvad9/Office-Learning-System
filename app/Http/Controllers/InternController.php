@@ -125,6 +125,7 @@ class InternController extends Controller
                     'progress_percentage' => $progressPercent,
                     'status' => strtolower(str_replace(' ', '_', $videoStatus)),
                     'category' => $video->category,
+                    'part_number' => $video->part_number ?? 1,
                     'created_at' => $video->created_at,
                 ];
             })->filter()->values();
@@ -187,6 +188,7 @@ class InternController extends Controller
                     'progress_percentage' => $progressPercent,
                     'status' => strtolower(str_replace(' ', '_', $videoStatus)),
                     'category' => $video->category,
+                    'part_number' => $video->part_number ?? 1,
                     'created_at' => $video->created_at,
                 ];
             });

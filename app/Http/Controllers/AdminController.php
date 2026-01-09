@@ -83,6 +83,7 @@ class AdminController extends Controller
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'category_id' => 'nullable|exists:video_categories,id',
+                'part_number' => 'nullable|integer|min:1',
                 'video' => 'required|file|mimes:mp4|max:512000', // 500MB max (in KB)
             ]);
 
@@ -128,6 +129,7 @@ class AdminController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+                'part_number' => $request->part_number ?? 1,
                 'video_path' => $videoPath,
                 'duration' => 0, // Will be updated asynchronously
             ]);

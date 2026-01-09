@@ -158,6 +158,14 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="part_number" class="form-label">Part Number</label>
+                            <input type="number" id="part_number" name="part_number" value="{{ old('part_number', 1) }}" min="1" class="form-input" placeholder="1">
+                            <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
+                                <i class="fas fa-info-circle"></i> Part number for video sequencing (1, 2, 3, etc.). Videos will auto-play in order.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="video" class="form-label">Video File <span
                                     style="color: var(--error);">*</span></label>
                             <input type="file" id="video" name="video" accept=".mp4" required class="form-input">

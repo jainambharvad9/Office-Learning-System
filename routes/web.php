@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/video/{id}', [VideoController::class, 'watch'])->name('video.watch');
         Route::post('/save-progress', [VideoController::class, 'saveProgress'])->name('video.save.progress');
         Route::post('/update-video-duration', [VideoController::class, 'updateDuration'])->name('video.update.duration');
+        Route::post('/video/mark-complete', [VideoController::class, 'markVideoComplete'])->name('video.mark.complete');
     });
 });
 
