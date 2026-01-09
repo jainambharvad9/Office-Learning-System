@@ -60,9 +60,9 @@
                             @if($nextVideo)
                                 <div style="margin-top: 1rem;">
                                     <p style="margin-bottom: 0.5rem;">Ready for the next part?</p>
-                                    <a href="{{ route('video.watch', $nextVideo->id) }}" class="btn btn-primary" style="display: inline-block;">
+                                    {{-- <a href="{{ route('video.watch', $nextVideo->id) }}" class="btn btn-primary" style="display: inline-block;">
                                         <i class="fas fa-play"></i> Start {{ $nextVideo->title }}
-                                    </a>
+                                    </a> --}}
                                 </div>
                             @endif
                         </div>
@@ -74,8 +74,56 @@
                     @endif
                 </div>
             </div>
+            <!-- Navigation Buttons -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                        @php
+                            $prevVideo = null;
+                            $nextVideo = null;
+                            if ($currentIndex !== false) {
+                                if ($currentIndex > 0) {
+                                    $prevVideo = $allVideos[$currentIndex - 1];
+                                }
+                                if ($currentIndex + 1 < $allVideos->count()) {
+                                    $nextVideo = $allVideos[$currentIndex + 1];
+                                }
+                            }
+                        @endphp
 
-            <!-- Category Videos Section -->
+                        <div style="flex: 1;">
+                            @if($prevVideo)
+                                <a href="{{ route('video.watch', $prevVideo->id) }}" class="btn btn-outline" style="width: 100%;">
+                                    <i class="fas fa-arrow-left"></i> Previous: {{ $prevVideo->title }}
+                                </a>
+                            @else
+                                <button class="btn btn-outline" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
+                                    <i class="fas fa-arrow-left"></i> No Previous Part
+                                </button>
+                            @endif
+                        </div>
+
+                        <div style="flex: 1; text-align: center;">
+                            <span style="background: var(--surface); padding: 0.75rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                                <strong>Part {{ $video->part_number }} of {{ $allVideos ? $allVideos->count() : 1 }}</strong>
+                            </span>
+                        </div>
+
+                        <div style="flex: 1;">
+                            @if($nextVideo)
+                                <a href="{{ route('video.watch', $nextVideo->id) }}" class="btn btn-primary" style="width: 100%;">
+                                    <i class="fas fa-arrow-right"></i> Next: {{ $nextVideo->title }}
+                                </a>
+                            @else
+                                <button class="btn btn-outline" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
+                                    <i class="fas fa-arrow-right"></i> No Next Part
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        {{-- <!-- Category Videos Section -->
             @if($allVideos && $allVideos->count() > 1)
             <div class="card" style="margin-bottom: 2rem;">
                 <div class="card-header">
@@ -144,57 +192,7 @@
                     </div>
                 </div>
             </div>
-            @endif
-
-            <!-- Navigation Buttons -->
-            <div class="card" style="margin-bottom: 2rem;">
-                <div class="card-body">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        @php
-                            $prevVideo = null;
-                            $nextVideo = null;
-                            if ($currentIndex !== false) {
-                                if ($currentIndex > 0) {
-                                    $prevVideo = $allVideos[$currentIndex - 1];
-                                }
-                                if ($currentIndex + 1 < $allVideos->count()) {
-                                    $nextVideo = $allVideos[$currentIndex + 1];
-                                }
-                            }
-                        @endphp
-
-                        <div style="flex: 1;">
-                            @if($prevVideo)
-                                <a href="{{ route('video.watch', $prevVideo->id) }}" class="btn btn-outline" style="width: 100%;">
-                                    <i class="fas fa-arrow-left"></i> Previous: {{ $prevVideo->title }}
-                                </a>
-                            @else
-                                <button class="btn btn-outline" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
-                                    <i class="fas fa-arrow-left"></i> No Previous Part
-                                </button>
-                            @endif
-                        </div>
-
-                        <div style="flex: 1; text-align: center;">
-                            <span style="background: var(--surface); padding: 0.75rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
-                                <strong>Part {{ $video->part_number }} of {{ $allVideos ? $allVideos->count() : 1 }}</strong>
-                            </span>
-                        </div>
-
-                        <div style="flex: 1;">
-                            @if($nextVideo)
-                                <a href="{{ route('video.watch', $nextVideo->id) }}" class="btn btn-primary" style="width: 100%;">
-                                    <i class="fas fa-arrow-right"></i> Next: {{ $nextVideo->title }}
-                                </a>
-                            @else
-                                <button class="btn btn-outline" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
-                                    <i class="fas fa-arrow-right"></i> No Next Part
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @endif --}}
         </div>
 
         <!-- Navigation -->
