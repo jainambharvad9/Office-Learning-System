@@ -5,12 +5,13 @@
     <div class="row">
         <!-- Sidebar Filters -->
         <div class="col-lg-3 mb-4">
-            <div class="card bg-light" style="background-color: var(--card-bg) !important; border-color: var(--border) !important;">
-                <div class="card-header bg-primary text-white" style="background-color: var(--primary) !important;">
-                    <h6 class="mb-0">
-                        <i class="bi bi-funnel"></i> Filters
-                    </h6>
-                </div>
+            <div class="sidebar-fixed" style="position: sticky; top: 90px;">
+                <div class="card bg-light" style="background-color: var(--card-bg) !important; border-color: var(--border) !important;">
+                    <div class="card-header bg-primary text-white" style="background-color: var(--primary) !important;">
+                        <h6 class="mb-0">
+                            <i class="bi bi-funnel"></i> Filters
+                        </h6>
+                    </div>
                 <div class="card-body">
                     <form method="GET" action="{{ route('intern.videos.all') }}" id="filterForm">
                         <!-- Search Input -->
@@ -89,7 +90,7 @@
                 </div>
             </div>
 
-            <!-- Active Filters Summary -->
+            {{-- <!-- Active Filters Summary -->
             @if(request('search') || request('category') || request('status') || request('sort') != 'latest')
                 <div class="card mt-3" style="background-color: var(--card-bg) !important; border-color: var(--border) !important; border-left: 4px solid var(--primary);">
                     <div class="card-body">
@@ -113,7 +114,8 @@
                         </div>
                     </div>
                 </div>
-            @endif
+            @endif --}}
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -305,6 +307,12 @@
         object-fit: cover;
     }
 
+    /* Fixed Sidebar Styles */
+    .sidebar-fixed {
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
     /* Category Section Styles */
     .category-section {
         border: 1px solid var(--border);
@@ -373,6 +381,11 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
+        .sidebar-fixed {
+            position: static !important;
+            max-height: none;
+        }
+
         .videos-grid {
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 1rem;
