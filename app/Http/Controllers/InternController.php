@@ -15,52 +15,49 @@ class InternController extends Controller
     public function dashboard(Request $request)
     {
         $user = Auth::user();
-        $categoryId = $request->get('category');
 
         // Get all active categories
         $categories = VideoCategory::active()->get();
 
-        // Filter videos by category if selected
-        $videosQuery = Video::query();
-        if ($categoryId) {
-            $videosQuery->where('category_id', $categoryId);
-        }
+        // Get videos with progress (recently viewed or in progress)
+        $videosWithProgress = VideoProgress::where('user_id', $user->id)
+            ->with(['video.category'])
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function ($progress) {
+                $video = $progress->video;
 
-        $videos = $videosQuery->get()->map(function ($video) use ($user) {
-            $progress = VideoProgress::where('user_id', $user->id)
-                ->where('video_id', $video->id)
-                ->first();
+                $status = 'Pending';
+                $progressPercent = 0;
 
-            $status = 'Pending';
-            $progressPercent = 0;
-
-            if ($progress) {
                 if ($progress->is_completed) {
                     $status = 'Completed';
                     $progressPercent = 100;
                 } else {
                     $status = 'In Progress';
                     $progressPercent = $video->duration > 0
-                        ? min(100, ($progress->watched_duration / $video->duration) * 100)
+                        ? min(100, round(($progress->watched_duration / $video->duration) * 100))
                         : 0;
                 }
-            }
 
-            return [
-                'id' => $video->id,
-                'title' => $video->title,
-                'description' => $video->description,
-                'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
-                'progress' => $progressPercent,
-                'status' => $status,
-                'locked' => false, // For now, all unlocked
-                'category' => $video->category ? $video->category->name : 'Uncategorized',
-            ];
-        });
+                return [
+                    'id' => $video->id,
+                    'title' => $video->title,
+                    'description' => $video->description,
+                    'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
+                    'progress' => $progressPercent,
+                    'status' => $status,
+                    'locked' => false,
+                    'category' => $video->category ? $video->category->name : 'Uncategorized',
+                    'last_viewed' => $progress->updated_at,
+                ];
+            });
 
-        $selectedCategory = $categoryId ? VideoCategory::find($categoryId) : null;
+        // Separate into "In Progress" and "Recently Viewed" (completed)
+        $inProgressVideos = $videosWithProgress->where('status', 'In Progress')->take(6);
+        $recentlyViewedVideos = $videosWithProgress->where('status', 'Completed')->take(6);
 
-        return view('intern.dashboard', compact('videos', 'categories', 'selectedCategory'));
+        return view('intern.dashboard', compact('inProgressVideos', 'recentlyViewedVideos', 'categories'));
     }
 
     public function allVideos(Request $request)
@@ -109,6 +106,9 @@ class InternController extends Controller
                             ? min(100, round(($progress->watched_duration / $video->duration) * 100))
                             : 0;
                     }
+
+                    // Debug logging
+                    Log::info("Video {$video->id}: status={$videoStatus}, progressPercent={$progressPercent}, watched={$progress->watched_duration}, duration={$video->duration}, completed={$progress->is_completed}");
                 }
 
                 // Filter by status if specified
@@ -123,7 +123,7 @@ class InternController extends Controller
                     'thumbnail_url' => $video->thumbnail_url ?? null,
                     'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
                     'progress_percentage' => $progressPercent,
-                    'status' => lcfirst(str_replace(' ', '_', $videoStatus)),
+                    'status' => strtolower(str_replace(' ', '_', $videoStatus)),
                     'category' => $video->category,
                     'created_at' => $video->created_at,
                 ];
@@ -185,7 +185,7 @@ class InternController extends Controller
                     'thumbnail_url' => $video->thumbnail_url ?? null,
                     'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
                     'progress_percentage' => $progressPercent,
-                    'status' => lcfirst(str_replace(' ', '_', $videoStatus)),
+                    'status' => strtolower(str_replace(' ', '_', $videoStatus)),
                     'category' => $video->category,
                     'created_at' => $video->created_at,
                 ];

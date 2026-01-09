@@ -153,7 +153,7 @@
                                         <!-- Progress Badge -->
                                         @if($video['progress_percentage'] > 0)
                                             <div class="position-absolute top-0 end-0 m-2">
-                                                <span class="badge" style="background-color: {{ $video['status'] === 'Completed' ? 'var(--success)' : ($video['status'] === 'In Progress' ? 'var(--warning)' : 'var(--secondary)') }};">
+                                                <span class="badge" style="background-color: {{ $video['status'] === 'completed' ? 'var(--success)' : ($video['status'] === 'in_progress' ? 'var(--warning)' : 'var(--secondary)') }};">
                                                     {{ $video['progress_percentage'] }}%
                                                 </span>
                                             </div>
@@ -218,12 +218,12 @@
                                         <div class="d-flex justify-content-between align-items-center mt-auto">
                                             <div>
                                                 @switch($video['status'])
-                                                    @case('Completed')
+                                                    @case('completed')
                                                         <span class="badge bg-success">
                                                             <i class="bi bi-check-circle"></i> Completed
                                                         </span>
                                                         @break
-                                                    @case('In Progress')
+                                                    @case('in_progress')
                                                         <span class="badge bg-warning">
                                                             <i class="bi bi-play-circle"></i> In Progress
                                                         </span>
@@ -236,7 +236,7 @@
                                             </div>
                                             <a href="{{ route('video.watch', $video['id']) }}" 
                                                class="btn btn-sm btn-primary" style="background-color: var(--primary) !important; border-color: var(--primary) !important;">
-                                                <i class="bi bi-play"></i> {{ $video['status'] === 'Completed' ? 'Review' : 'Watch' }}
+                                                <i class="bi bi-play"></i> {{ $video['status'] === 'completed' ? 'Review' : 'Watch' }}
                                             </a>
                                         </div>
                                     </div>

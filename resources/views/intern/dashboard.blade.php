@@ -17,15 +17,15 @@
                     <div class="stat-icon">
                         <i class="fas fa-play-circle"></i>
                     </div>
-                    <div class="stat-number">{{ $videos->count() }}</div>
-                    <div class="stat-label">Total Videos</div>
+                    <div class="stat-number">{{ $inProgressVideos->count() + $recentlyViewedVideos->count() }}</div>
+                    <div class="stat-label">My Videos</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="stat-number">{{ $videos->where('status', 'Completed')->count() }}</div>
+                    <div class="stat-number">{{ $recentlyViewedVideos->count() }}</div>
                     <div class="stat-label">Completed</div>
                 </div>
 
@@ -33,7 +33,7 @@
                     <div class="stat-icon">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <div class="stat-number">{{ $videos->where('status', 'In Progress')->count() }}</div>
+                    <div class="stat-number">{{ $inProgressVideos->count() }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
 
@@ -41,8 +41,14 @@
                     <div class="stat-icon">
                         <i class="fas fa-percentage"></i>
                     </div>
-                    <div class="stat-number">{{ round($videos->avg('progress'), 1) }}%</div>
-                    <div class="stat-label">Average Progress</div>
+                    <div class="stat-number">
+                        @if($inProgressVideos->count() + $recentlyViewedVideos->count() > 0)
+                            {{ round(($recentlyViewedVideos->count() / ($inProgressVideos->count() + $recentlyViewedVideos->count())) * 100) }}%
+                        @else
+                            0%
+                        @endif
+                    </div>
+                    <div class="stat-label">Completion Rate</div>
                 </div>
             </div>
 
@@ -69,56 +75,23 @@
                 </a>
             </div>
 
-            <!-- Videos Grid -->
-            <div class="section-header">
-                <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 600; margin: 0;">
-                    <i class="fas fa-video" style="margin-right: 0.5rem;"></i>
-                    Available Videos
-                </h2>
-                <p style="color: var(--text-secondary); margin: 0.5rem 0 0 0;">
-                    Click on any video to start learning
-                </p>
-            </div>
-
-            <!-- Category Filter -->
-            @if($categories->count() > 0)
-                <div style="margin-bottom: 2rem;">
-                    <form method="GET" style="display: inline;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <label for="category" style="font-weight: 500; color: var(--text-primary); margin: 0;">
-                                <i class="fas fa-filter"></i> Filter by Category:
-                            </label>
-                            <select name="category" id="category" class="form-input" style="width: auto; min-width: 200px;"
-                                onchange="this.form.submit()">
-                                <option value="">All Categories</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" {{ $selectedCategory && $selectedCategory->id == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }} ({{ $category->videos_count }} videos)
-                                    </option>
-                                @endforeach
-                            </select>
-                            @if($selectedCategory)
-                                <a href="{{ route('intern.dashboard') }}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times"></i> Clear Filter
-                                </a>
-                            @endif
-                        </div>
-                    </form>
+            <!-- Continue Learning Section -->
+            @if($inProgressVideos->count() > 0)
+                <div class="section-header">
+                    <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 600; margin: 0;">
+                        <i class="fas fa-play-circle" style="margin-right: 0.5rem; color: var(--warning);"></i>
+                        Continue Learning
+                    </h2>
+                    <p style="color: var(--text-secondary); margin: 0.5rem 0 0 0;">
+                        Pick up where you left off
+                    </p>
                 </div>
-            @endif
 
-            <div class="video-grid">
-                @foreach($videos as $video)
-                    <div class="video-card-wrapper">
-                        <a href="{{ route('video.watch', $video['id']) }}"
-                            class="video-card {{ $video['locked'] ? 'locked' : '' }}">
-                            <div class="video-thumbnail">
-                                @if($video['locked'])
-                                    <div class="locked-overlay">
-                                        <i class="fas fa-lock"></i>
-                                        <span>Locked</span>
-                                    </div>
-                                @else
+                <div class="video-grid">
+                    @foreach($inProgressVideos as $video)
+                        <div class="video-card-wrapper">
+                            <a href="{{ route('video.watch', $video['id']) }}" class="video-card">
+                                <div class="video-thumbnail">
                                     <div class="video-play-icon">
                                         <i class="fas fa-play"></i>
                                     </div>
@@ -126,63 +99,129 @@
                                         <i class="fas fa-clock"></i>
                                         {{ $video['duration'] }}
                                     </div>
-                                @endif
-                            </div>
-
-                            <div class="video-content">
-                                <h3 class="video-title">{{ $video['title'] }}</h3>
-                                @if($video['description'])
-                                    <p class="video-description">{{ Str::limit($video['description'], 80) }}</p>
-                                @endif
-
-                                <div class="video-meta">
-                                    <div class="status-indicator">
-                                        <span
-                                            class="status-dot status-{{ strtolower(str_replace(' ', '-', $video['status'])) }}"></span>
-                                        <span class="status-text">{{ $video['status'] }}</span>
-                                    </div>
-
-                                    @if($video['category'] !== 'Uncategorized')
-                                        <div class="category-badge">
-                                            <i class="fas fa-tag"></i>
-                                            {{ $video['category'] }}
-                                        </div>
-                                    @endif
-
-                                    @if(!$video['locked'] && $video['progress'] > 0)
-                                        <div class="progress-indicator">
-                                            {{ round($video['progress']) }}%
-                                        </div>
-                                    @endif
                                 </div>
 
-                                @if(!$video['locked'] && $video['progress'] > 0)
+                                <div class="video-content">
+                                    <h3 class="video-title">{{ $video['title'] }}</h3>
+                                    @if($video['description'])
+                                        <p class="video-description">{{ Str::limit($video['description'], 80) }}</p>
+                                    @endif
+
+                                    <div class="video-meta">
+                                        <div class="status-indicator">
+                                            <span class="status-dot status-in-progress"></span>
+                                            <span class="status-text">{{ $video['progress'] }}% Complete</span>
+                                        </div>
+
+                                        @if($video['category'] !== 'Uncategorized')
+                                            <div class="category-badge">
+                                                <i class="fas fa-tag"></i>
+                                                {{ $video['category'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+
                                     <div class="progress-container">
                                         <div class="progress-bar">
                                             <div class="progress-fill" style="width: {{ $video['progress'] }}%;"></div>
                                         </div>
                                     </div>
-                                @endif
 
-                                <div class="video-actions">
-                                    <span class="watch-btn">
-                                        <i class="fas fa-play-circle"></i>
-                                        {{ $video['status'] === 'Completed' ? 'Review' : 'Watch Now' }}
-                                    </span>
+                                    <div class="video-actions">
+                                        <span class="watch-btn">
+                                            <i class="fas fa-play-circle"></i>
+                                            Continue Watching
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-                    </div>
-                @endforeach
-            </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
-            @if($videos->isEmpty())
-                <div class="card" style="text-align: center; padding: 3rem;">
-                    <div style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;">
-                        <i class="fas fa-video-slash"></i>
+            <!-- Recently Viewed Section -->
+            @if($recentlyViewedVideos->count() > 0)
+                <div class="section-header" style="margin-top: 3rem;">
+                    <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 600; margin: 0;">
+                        <i class="fas fa-history" style="margin-right: 0.5rem; color: var(--success);"></i>
+                        Recently Viewed
+                    </h2>
+                    <p style="color: var(--text-secondary); margin: 0.5rem 0 0 0;">
+                        Review your completed videos
+                    </p>
+                </div>
+
+                <div class="video-grid">
+                    @foreach($recentlyViewedVideos as $video)
+                        <div class="video-card-wrapper">
+                            <a href="{{ route('video.watch', $video['id']) }}" class="video-card">
+                                <div class="video-thumbnail">
+                                    <div class="video-play-icon">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="video-duration-badge">
+                                        <i class="fas fa-clock"></i>
+                                        {{ $video['duration'] }}
+                                    </div>
+                                    <div class="completed-badge">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </div>
+
+                                <div class="video-content">
+                                    <h3 class="video-title">{{ $video['title'] }}</h3>
+                                    @if($video['description'])
+                                        <p class="video-description">{{ Str::limit($video['description'], 80) }}</p>
+                                    @endif
+
+                                    <div class="video-meta">
+                                        <div class="status-indicator">
+                                            <span class="status-dot status-completed"></span>
+                                            <span class="status-text">Completed</span>
+                                        </div>
+
+                                        @if($video['category'] !== 'Uncategorized')
+                                            <div class="category-badge">
+                                                <i class="fas fa-tag"></i>
+                                                {{ $video['category'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="progress-container">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 100%; background-color: var(--success);"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="video-actions">
+                                        <span class="watch-btn">
+                                            <i class="fas fa-redo"></i>
+                                            Review Video
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <!-- Empty State -->
+            @if($inProgressVideos->isEmpty() && $recentlyViewedVideos->isEmpty())
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-video"></i>
                     </div>
-                    <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem;">No Videos Available</h3>
-                    <p style="color: var(--text-muted);">Check back later for new learning content!</p>
+                    <h3 class="empty-state-title">Start Your Learning Journey</h3>
+                    <p class="empty-state-description">
+                        You haven't started watching any videos yet. Browse our video library to begin learning!
+                    </p>
+                    <a href="{{ route('intern.videos.all') }}" class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        Browse Videos
+                    </a>
                 </div>
             @endif
         </div>
@@ -363,6 +402,62 @@
         html[data-theme="light"] select.form-input option:checked {
             background: var(--primary);
             color: white;
+        }
+
+        /* Completed Badge */
+        .completed-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state-title {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state-description {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Section Spacing */
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-header+.video-grid {
+            margin-bottom: 3rem;
         }
     </style>
 @endsection
