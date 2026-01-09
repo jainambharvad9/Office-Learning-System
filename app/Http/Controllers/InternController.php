@@ -63,6 +63,152 @@ class InternController extends Controller
         return view('intern.dashboard', compact('videos', 'categories', 'selectedCategory'));
     }
 
+    public function allVideos(Request $request)
+    {
+        $user = Auth::user();
+        $categoryId = $request->get('category');
+        $status = $request->get('status'); // 'completed', 'in_progress', 'pending'
+        $search = $request->get('search');
+        $sortBy = $request->get('sort', 'latest'); // 'latest', 'oldest', 'title'
+
+        // Get all active categories
+        $categories = VideoCategory::active()->get();
+
+        // Filter videos
+        $videosQuery = Video::query();
+
+        if ($categoryId) {
+            $videosQuery->where('category_id', $categoryId);
+        }
+
+        if ($search) {
+            $videosQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Apply status filter before pagination
+        if ($status) {
+            // We need to fetch all videos first to apply status filter, then paginate
+            $allVideos = $videosQuery->get()->map(function ($video) use ($user, $status) {
+                $progress = VideoProgress::where('user_id', $user->id)
+                    ->where('video_id', $video->id)
+                    ->first();
+
+                $videoStatus = 'Pending';
+                $progressPercent = 0;
+
+                if ($progress) {
+                    if ($progress->is_completed) {
+                        $videoStatus = 'Completed';
+                        $progressPercent = 100;
+                    } else {
+                        $videoStatus = 'In Progress';
+                        $progressPercent = $video->duration > 0
+                            ? min(100, round(($progress->watched_duration / $video->duration) * 100))
+                            : 0;
+                    }
+                }
+
+                // Filter by status if specified
+                if ($this->getStatusKey($videoStatus) !== $status) {
+                    return null;
+                }
+
+                return [
+                    'id' => $video->id,
+                    'title' => $video->title,
+                    'description' => $video->description,
+                    'thumbnail_url' => $video->thumbnail_url ?? null,
+                    'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
+                    'progress_percentage' => $progressPercent,
+                    'status' => lcfirst(str_replace(' ', '_', $videoStatus)),
+                    'category' => $video->category,
+                    'created_at' => $video->created_at,
+                ];
+            })->filter()->values();
+
+            $total = $allVideos->count();
+            $page = $request->get('page', 1);
+            $perPage = 12;
+            $items = $allVideos->slice(($page - 1) * $perPage, $perPage);
+
+            $videos = new \Illuminate\Pagination\Paginator(
+                $items,
+                $perPage,
+                $page,
+                [
+                    'path' => route('intern.videos.all'),
+                    'query' => $request->query(),
+                ]
+            );
+        } else {
+            // Apply sorting
+            switch ($sortBy) {
+                case 'oldest':
+                    $videosQuery->oldest();
+                    break;
+                case 'title':
+                    $videosQuery->orderBy('title', 'asc');
+                    break;
+                default: // latest
+                    $videosQuery->latest();
+            }
+
+            $paginatedVideos = $videosQuery->paginate(12);
+
+            $videos = $paginatedVideos->map(function ($video) use ($user) {
+                $progress = VideoProgress::where('user_id', $user->id)
+                    ->where('video_id', $video->id)
+                    ->first();
+
+                $videoStatus = 'Pending';
+                $progressPercent = 0;
+
+                if ($progress) {
+                    if ($progress->is_completed) {
+                        $videoStatus = 'Completed';
+                        $progressPercent = 100;
+                    } else {
+                        $videoStatus = 'In Progress';
+                        $progressPercent = $video->duration > 0
+                            ? min(100, round(($progress->watched_duration / $video->duration) * 100))
+                            : 0;
+                    }
+                }
+
+                return [
+                    'id' => $video->id,
+                    'title' => $video->title,
+                    'description' => $video->description,
+                    'thumbnail_url' => $video->thumbnail_url ?? null,
+                    'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : '00:00',
+                    'progress_percentage' => $progressPercent,
+                    'status' => lcfirst(str_replace(' ', '_', $videoStatus)),
+                    'category' => $video->category,
+                    'created_at' => $video->created_at,
+                ];
+            });
+        }
+
+        $selectedCategory = $categoryId ? VideoCategory::find($categoryId) : null;
+
+        return view('intern.videos.index', compact(
+            'videos',
+            'categories',
+            'selectedCategory',
+            'search',
+            'status',
+            'sortBy'
+        ));
+    }
+
+    private function getStatusKey($status)
+    {
+        return strtolower(str_replace(' ', '_', $status));
+    }
+
     public function searchVideos(Request $request)
     {
         try {

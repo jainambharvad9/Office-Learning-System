@@ -112,6 +112,7 @@ p {
     align-items: center;
     justify-content: space-between;
     height: var(--header-height);
+    gap: 1rem;
 }
 
 .logo-section {
@@ -142,10 +143,91 @@ p {
     margin-top: 2px;
 }
 
-.main-nav {
+.search-section {
     flex: 1;
-    display: flex;
-    justify-content: center;
+    max-width: 350px;
+    margin: 0 1rem;
+}
+
+.search-box-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    z-index: 2;
+}
+
+.video-search-input {
+    width: 100%;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.video-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.video-search-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    margin-top: 4px;
+}
+
+.search-results-dropdown .search-result-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-results-dropdown .search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-results-dropdown .search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-results-dropdown .search-result-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.search-results-dropdown .search-result-category {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.main-nav {
+    flex-shrink: 0;
 }
 
 .nav-links {

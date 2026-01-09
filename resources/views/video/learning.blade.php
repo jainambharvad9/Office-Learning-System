@@ -38,7 +38,7 @@
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill" id="progress-fill"
-                                    style="width: {{ $video->duration > 0 ? min(100, ($progress->watched_duration / $video->duration) * 100) : 0 }}%;">
+                                    style="width: {{ $video->duration > 0 ? min(100, round(($progress->watched_duration / $video->duration) * 100)) : 0 }}%;">
                                 </div>
                             </div>
                         </div>
@@ -62,8 +62,8 @@
 
         <!-- Navigation -->
         <div style="text-align: center;">
-            <a href="{{ route('intern.dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            <a href="{{ route('intern.videos.all') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Videos
             </a>
         </div>
     </div>

@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
     // Intern routes
     Route::middleware(['intern'])->prefix('intern')->name('intern.')->group(function () {
         Route::get('/dashboard', [InternController::class, 'dashboard'])->name('dashboard');
+        Route::get('/videos', [InternController::class, 'allVideos'])->name('videos.all');
         Route::get('/search-videos', [InternController::class, 'searchVideos'])->name('search.videos');
 
         // Quiz routes

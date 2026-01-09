@@ -1,0 +1,288 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3 mb-4">
+            <div class="card bg-light" style="background-color: var(--card-bg) !important; border-color: var(--border) !important;">
+                <div class="card-header bg-primary text-white" style="background-color: var(--primary) !important;">
+                    <h6 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filters
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('intern.videos.all') }}" id="filterForm">
+                        <!-- Search Input -->
+                        <div class="mb-4">
+                            <label class="form-label fw-500" style="color: var(--text-primary);">
+                                <i class="bi bi-search"></i> Search Videos
+                            </label>
+                            <input type="text" name="search" class="form-control" placeholder="Video title..." 
+                                   value="{{ request('search') }}" style="background-color: var(--input-bg); border-color: var(--border); color: var(--text-primary);">
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="mb-4">
+                            <label class="form-label fw-500" style="color: var(--text-primary);">
+                                <i class="bi bi-folder"></i> Category
+                            </label>
+                            <select name="category" class="form-select" style="background-color: var(--input-bg); border-color: var(--border); color: var(--text-primary);">
+                                <option value="">All Categories</option>
+                                @forelse($categories as $category)
+                                    <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @empty
+                                    <option disabled>No categories</option>
+                                @endforelse
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="mb-4">
+                            <label class="form-label fw-500" style="color: var(--text-primary);">
+                                <i class="bi bi-check-circle"></i> Status
+                            </label>
+                            <select name="status" class="form-select" style="background-color: var(--input-bg); border-color: var(--border); color: var(--text-primary);">
+                                <option value="">All Videos</option>
+                                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>
+                                    <i class="bi bi-check-circle-fill"></i> Completed
+                                </option>
+                                <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>
+                                    <i class="bi bi-play-circle"></i> In Progress
+                                </option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>
+                                    <i class="bi bi-circle"></i> Not Started
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="mb-4">
+                            <label class="form-label fw-500" style="color: var(--text-primary);">
+                                <i class="bi bi-sort-down"></i> Sort By
+                            </label>
+                            <select name="sort" class="form-select" style="background-color: var(--input-bg); border-color: var(--border); color: var(--text-primary);">
+                                <option value="latest" {{ request('sort', 'latest') == 'latest' ? 'selected' : '' }}>
+                                    Latest First
+                                </option>
+                                <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>
+                                    Oldest First
+                                </option>
+                                <option value="title" {{ request('sort') == 'title' ? 'selected' : '' }}>
+                                    Title (A-Z)
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" style="background-color: var(--primary) !important; border-color: var(--primary) !important;">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a href="{{ route('intern.videos.all') }}" class="btn btn-secondary" style="background-color: var(--secondary) !important; border-color: var(--secondary) !important;">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Filters Summary -->
+            @if(request('search') || request('category') || request('status') || request('sort') != 'latest')
+                <div class="card mt-3" style="background-color: var(--card-bg) !important; border-color: var(--border) !important; border-left: 4px solid var(--primary);">
+                    <div class="card-body">
+                        <p class="text-muted mb-2" style="color: var(--text-secondary) !important;">Active Filters:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            @if(request('search'))
+                                <span class="badge bg-info" style="background-color: var(--info) !important;">
+                                    Search: {{ request('search') }}
+                                </span>
+                            @endif
+                            @if(request('category'))
+                                <span class="badge bg-warning" style="background-color: var(--warning) !important;">
+                                    Category: {{ $categories->find(request('category'))?->name ?? 'Unknown' }}
+                                </span>
+                            @endif
+                            @if(request('status'))
+                                <span class="badge bg-success" style="background-color: var(--success) !important;">
+                                    Status: {{ ucfirst(str_replace('_', ' ', request('status'))) }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Header -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1" style="color: var(--text-primary);">
+                            <i class="bi bi-film"></i> All Videos
+                        </h2>
+                        <p class="text-muted" style="color: var(--text-secondary) !important;">
+                            Total: <strong>{{ count($videos) }}</strong> videos
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Videos Grid -->
+            @forelse($videos as $video)
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card h-100 video-card" style="background-color: var(--card-bg) !important; border-color: var(--border) !important; transition: transform 0.2s, box-shadow 0.2s;">
+                            <div class="row g-0">
+                                <!-- Thumbnail -->
+                                <div class="col-md-4">
+                                    <div class="position-relative overflow-hidden" style="height: 200px; background: linear-gradient(135deg, var(--primary), var(--secondary));">
+                                        @if(isset($video['thumbnail_url']) && $video['thumbnail_url'])
+                                            <img src="{{ $video['thumbnail_url'] }}" alt="{{ $video['title'] }}" 
+                                                 class="w-100 h-100 object-fit-cover">
+                                        @else
+                                            <div class="d-flex align-items-center justify-content-center h-100">
+                                                <i class="bi bi-film" style="font-size: 3rem; color: rgba(255,255,255,0.5);"></i>
+                                            </div>
+                                        @endif
+                                        
+                                        <!-- Progress Badge -->
+                                        @if($video['progress_percentage'] > 0)
+                                            <div class="position-absolute top-0 end-0 m-2">
+                                                <span class="badge" style="background-color: {{ $video['status'] === 'Completed' ? 'var(--success)' : ($video['status'] === 'In Progress' ? 'var(--warning)' : 'var(--secondary)') }};">
+                                                    {{ $video['progress_percentage'] }}%
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <!-- Play Button Overlay -->
+                                        <a href="{{ route('video.watch', $video['id']) }}" 
+                                           class="position-absolute top-50 start-50 translate-middle btn btn-light btn-lg rounded-circle"
+                                           style="width: 60px; height: 60px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-play-fill" style="font-size: 1.5rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Video Details -->
+                                <div class="col-md-8">
+                                    <div class="card-body d-flex flex-column h-100">
+                                        <!-- Category Badge -->
+                                        <div class="mb-2">
+                                            <span class="badge bg-secondary" style="background-color: var(--primary) !important;">
+                                                {{ $video['category'] ? $video['category']->name : 'Uncategorized' }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Title -->
+                                        <h5 class="card-title mb-2" style="color: var(--text-primary);">
+                                            {{ $video['title'] }}
+                                        </h5>
+
+                                        <!-- Description -->
+                                        <p class="card-text mb-3" style="color: var(--text-secondary); font-size: 0.95rem;">
+                                            {{ Str::limit($video['description'], 150) }}
+                                        </p>
+
+                                        <!-- Meta Info -->
+                                        <div class="d-flex gap-4 mb-3 flex-wrap">
+                                            @if($video['duration'])
+                                                <small style="color: var(--text-secondary);">
+                                                    <i class="bi bi-clock"></i> {{ $video['duration'] }}
+                                                </small>
+                                            @endif
+                                            <small style="color: var(--text-secondary);">
+                                                <i class="bi bi-calendar"></i> {{ $video['created_at']->format('M d, Y') }}
+                                            </small>
+                                        </div>
+
+                                        <!-- Progress Bar -->
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <small style="color: var(--text-secondary);">Progress</small>
+                                                <small style="color: var(--text-secondary);">{{ $video['progress_percentage'] }}%</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: var(--border);">
+                                                <div class="progress-bar" 
+                                                     style="width: {{ $video['progress_percentage'] }}%; background-color: var(--primary);"
+                                                     role="progressbar">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Status and Action -->
+                                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                                            <div>
+                                                @switch($video['status'])
+                                                    @case('Completed')
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle"></i> Completed
+                                                        </span>
+                                                        @break
+                                                    @case('In Progress')
+                                                        <span class="badge bg-warning">
+                                                            <i class="bi bi-play-circle"></i> In Progress
+                                                        </span>
+                                                        @break
+                                                    @default
+                                                        <span class="badge bg-secondary">
+                                                            <i class="bi bi-circle"></i> Not Started
+                                                        </span>
+                                                @endswitch
+                                            </div>
+                                            <a href="{{ route('video.watch', $video['id']) }}" 
+                                               class="btn btn-sm btn-primary" style="background-color: var(--primary) !important; border-color: var(--primary) !important;">
+                                                <i class="bi bi-play"></i> {{ $video['status'] === 'Completed' ? 'Review' : 'Watch' }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="alert alert-info text-center py-5" style="background-color: var(--info) !important; border-color: var(--primary) !important; color: var(--text-primary) !important;">
+                    <i class="bi bi-info-circle" style="font-size: 2rem;"></i>
+                    <h5 class="mt-3">No Videos Found</h5>
+                    <p class="mb-0">Try adjusting your filters or search terms</p>
+                </div>
+            @endforelse
+
+            <!-- Pagination -->
+            @if($videos instanceof \Illuminate\Pagination\Paginator)
+                <div class="d-flex justify-content-center mt-5">
+                    {{ $videos->appends(request()->query())->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<style>
+    .video-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    }
+
+    .object-fit-cover {
+        object-fit: cover;
+    }
+
+    @media (max-width: 768px) {
+        .card {
+            margin-bottom: 1rem;
+        }
+
+        .col-md-4,
+        .col-md-8 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+@endsection

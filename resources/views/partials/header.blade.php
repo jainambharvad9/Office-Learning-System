@@ -9,6 +9,17 @@
             <span class="brand-tagline">Empowering Your Career Growth</span>
         </div>
 
+        @if(auth()->check() && !auth()->user()->isAdmin())
+            <!-- Intern Search Box -->
+            <div class="search-section">
+                <div class="search-box-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="videoSearch" class="video-search-input" placeholder="Search videos...">
+                    <div id="searchResults" class="search-results-dropdown"></div>
+                </div>
+            </div>
+        @endif
+
         <nav class="main-nav">
             <ul class="nav-links">
                 @if(auth()->check())
@@ -36,26 +47,16 @@
                                 class="{{ request()->routeIs('admin.reports') ? 'active' : '' }}"><i
                                     class="fas fa-chart-bar"></i> Reports</a></li>
                     @else
-                        <!-- Intern Search Box -->
-                        <li style="flex: 1; max-width: 300px; margin: 0 1rem;">
-                            <div class="search-box-wrapper">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" id="videoSearch" class="video-search-input" placeholder="Search videos...">
-                                <div id="searchResults" class="search-results-dropdown"></div>
-                            </div>
-                            {{-- <div class="search-container" style="position: relative;">
-                                <input type="text" id="videoSearch" placeholder="Search videos...">
-                                <div id="searchResults"></div>
-                            </div> --}}
-                        </li>
-
                         <li><a href="{{ route('intern.dashboard') }}"
                                 class="{{ request()->routeIs('intern.dashboard') ? 'active' : '' }}"><i class="fas fa-home"></i>
                                 Dashboard</a></li>
+                        <li><a href="{{ route('intern.videos.all') }}"
+                                class="{{ request()->routeIs('intern.videos.all') ? 'active' : '' }}"><i
+                                    class="fas fa-film"></i>
+                                Videos</a></li>
                         <li><a href="{{ route('intern.quizzes.index') }}"
                                 class="{{ request()->routeIs('intern.quizzes*') ? 'active' : '' }}"><i class="fas fa-brain"></i>
                                 Quizzes</a></li>
-                        {{-- <li><a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a></li> --}}
                     @endif
                 @endif
             </ul>
@@ -66,7 +67,7 @@
             <i class="fas fa-bars"></i>
         </button>
 
-        <div class="header-actions">
+        <div class="header-actions" >
             <!-- Dark Mode Toggle -->
             <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
                 <i class="fas fa-moon"></i>
@@ -83,8 +84,6 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div class="user-dropdown" id="userDropdown">
-                        {{-- <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a>
-                        <a href="#" onclick="showSettings()"><i class="fas fa-cog"></i> Settings</a> --}}
                         <hr>
                         <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                             @csrf
