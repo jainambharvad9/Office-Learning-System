@@ -132,15 +132,28 @@
 
                 if (query.length < 2) {
                     searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
                     return;
                 }
 
                 searchTimeout = setTimeout(() => {
-                    fetch(`{{ route('intern.search.videos') }}?q=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
+                    fetch(`{{ route('intern.search.videos') }}?q=${encodeURIComponent(query)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             if (data.length === 0) {
                                 searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-search"></i> No videos found</div>';
+                                searchResults.style.display = 'block';
                                 return;
                             }
 
@@ -154,13 +167,14 @@
                                         </div>
                                     </a>
                                 `;
-                            });
-
+                            });                            
                             searchResults.innerHTML = html;
+                            searchResults.style.display = 'block';
                         })
                         .catch(error => {
                             console.error('Search error:', error);
                             searchResults.innerHTML = '<div class="search-error">Error searching videos</div>';
+                            searchResults.style.display = 'block';
                         });
                 }, 300);
             });
@@ -169,6 +183,7 @@
             document.addEventListener('click', function (e) {
                 if (!videoSearch.contains(e.target) && !searchResults.contains(e.target)) {
                     searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
                 }
             });
         }
@@ -255,6 +270,7 @@
         overflow-y: auto;
         z-index: 1000;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: block;
     }
 
     .search-result-item {
