@@ -26,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/process-video-duration/{video}', [AdminController::class, 'processVideoDuration'])->name('process.video.duration');
         Route::get('/upload-video', [AdminController::class, 'showUploadForm'])->name('upload.form');
         Route::get('/videos', [AdminController::class, 'manageVideos'])->name('videos');
+        Route::get('/videos/{id}/edit', [AdminController::class, 'editVideo'])->name('videos.edit');
+        Route::post('/videos/{id}/update', [AdminController::class, 'updateVideo'])->name('videos.update');
         Route::delete('/videos/{id}', [AdminController::class, 'deleteVideo'])->name('videos.delete');
         Route::get('/interns', [AdminController::class, 'manageInterns'])->name('interns');
         Route::post('/interns/register', [AdminController::class, 'registerIntern'])->name('interns.register');

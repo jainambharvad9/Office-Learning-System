@@ -50,6 +50,12 @@ class AdminController extends Controller
 
     public function uploadVideo(Request $request)
     {
+        // Set higher limits immediately
+        set_time_limit(900); // 15 minutes
+        ini_set('memory_limit', '512M');
+
+        Log::info('Upload request received. File size: ' . ($request->file('video') ? $request->file('video')->getSize() : 'no file'));
+
         // Check PHP limits before processing
         $maxUpload = ini_get('upload_max_filesize');
         $maxPost = ini_get('post_max_size');
@@ -87,15 +93,20 @@ class AdminController extends Controller
                 'description' => 'nullable|string',
                 'category_id' => 'nullable|exists:video_categories,id',
                 'part_number' => 'nullable|integer|min:1',
-                'video' => 'required|file|mimes:mp4|max:512000', // 500MB max (in KB)
+                'video' => 'required|file|max:512000', // 500MB max (in KB), removed mimes:mp4 for speed
             ]);
 
             // Check if file was uploaded successfully
             if (!$request->hasFile('video') || !$request->file('video')->isValid()) {
+                Log::error('Video upload failed or invalid file.', [
+                    'hasFile' => $request->hasFile('video'),
+                    'isValid' => $request->hasFile('video') ? $request->file('video')->isValid() : false,
+                    'error' => $request->hasFile('video') ? $request->file('video')->getError() : 'No file'
+                ]);
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'File upload failed. Please try again.'
+                        'message' => 'File upload failed. Error code: ' . ($request->hasFile('video') ? $request->file('video')->getError() : 'No file')
                     ], 400);
                 }
                 return redirect()->back()->with('error', 'File upload failed. Please try again.');
@@ -104,14 +115,14 @@ class AdminController extends Controller
             $file = $request->file('video');
 
             // Additional file size check
-            if ($file->getSize() > 157286400) { // 150MB in bytes
+            if ($file->getSize() > 524288000) { // 500MB in bytes
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'File size exceeds 150MB limit.'
+                        'message' => 'File size exceeds 500MB limit.'
                     ], 400);
                 }
-                return redirect()->back()->with('error', 'File size exceeds 150MB limit.');
+                return redirect()->back()->with('error', 'File size exceeds 500MB limit.');
             }
 
             // Store the video file
@@ -341,6 +352,60 @@ class AdminController extends Controller
         });
 
         return view('admin.videos', compact('videos'));
+    }
+
+    public function editVideo($id)
+    {
+        $video = Video::findOrFail($id);
+        $categories = VideoCategory::all();
+        return view('admin.edit_video', compact('video', 'categories'));
+    }
+
+    public function updateVideo(Request $request, $id)
+    {
+        $video = Video::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|exists:video_categories,id',
+            'part_number' => 'nullable|integer|min:1',
+            'video' => 'nullable|file|max:512000', // 500MB max
+        ]);
+
+        $data = [
+            'title' => $request->title,
+            'description' => $request->description,
+            'category_id' => $request->category_id,
+            'part_number' => $request->part_number ?? 1,
+        ];
+
+        if ($request->hasFile('video') && $request->file('video')->isValid()) {
+            // Delete old file
+            $oldPath = $video->video_path;
+
+            // Store new file
+            $videoPath = $request->file('video')->store('videos', 'public');
+            $data['video_path'] = $videoPath;
+            $data['duration'] = 0; // Reset duration so it can be re-calculated
+
+            // Delete old file AFTER successful upload of new one
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $video->update($data);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Video updated successfully!',
+                'video_id' => $video->id
+            ]);
+        }
+
+        return redirect()->route('admin.videos')->with('success', 'Video updated successfully!');
     }
 
     public function deleteVideo($id)

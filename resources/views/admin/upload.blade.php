@@ -248,8 +248,8 @@
                     xhr.open('POST', form.action);
                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
                     xhr.setRequestHeader('Accept', 'application/json');
-                    xhr.withCredentials = true;
-                    xhr.timeout = 600000; // 10 minutes
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    xhr.timeout = 900000; // 15 minutes logic
 
                     // Add upload progress tracking
                     xhr.upload.onprogress = (e) => {
@@ -371,7 +371,7 @@
                     xhr.setRequestHeader('Content-Type', 'application/json');
                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
                     xhr.setRequestHeader('Accept', 'application/json');
-                    xhr.withCredentials = true;
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                     xhr.onload = () => resolve(xhr);
                     xhr.onerror = () => reject(new Error('Network error'));
                     xhr.send(JSON.stringify({
@@ -415,7 +415,7 @@
             if (file) {
                 const maxSize = 500 * 1024 * 1024; // 500MB
                 if (file.size > maxSize) {
-                    alert('File size exceeds 100MB limit. Please choose a smaller file.');
+                    alert('File size exceeds 500MB limit. Please choose a smaller file.');
                     e.target.value = '';
                 }
             }

@@ -86,6 +86,10 @@
                                             {{ $video['upload_date'] }}
                                         </td>
                                         <td style="padding: 0.75rem; text-align: center;">
+                                            <a href="{{ route('admin.videos.edit', $video['id']) }}" class="btn btn-sm"
+                                                style="background: var(--primary); color: white; padding: 0.5rem 1rem; border-radius: var(--radius-sm); text-decoration: none; font-size: 0.85rem; margin-right: 0.5rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
                                             <form method="POST" action="{{ route('admin.videos.delete', $video['id']) }}"
                                                 style="display: inline;"
                                                 onsubmit="return confirm('Are you sure you want to delete this video? This action cannot be undone and will remove all progress data for this video.')">
