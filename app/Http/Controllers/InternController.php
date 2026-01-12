@@ -68,8 +68,8 @@ class InternController extends Controller
         $search = $request->get('search');
         $sortBy = $request->get('sort', 'latest'); // 'latest', 'oldest', 'title'
 
-        // Get all active categories
-        $categories = VideoCategory::active()->get();
+        // Get all active categories with video counts
+        $categories = VideoCategory::active()->withCount('videos')->get();
 
         // Filter videos
         $videosQuery = Video::query();
@@ -132,11 +132,12 @@ class InternController extends Controller
 
             $total = $allVideos->count();
             $page = $request->get('page', 1);
-            $perPage = 12;
+            $perPage = 100; // Increased limit to show all/most videos on one page
             $items = $allVideos->slice(($page - 1) * $perPage, $perPage);
 
-            $videos = new \Illuminate\Pagination\Paginator(
+            $videos = new \Illuminate\Pagination\LengthAwarePaginator(
                 $items,
+                $total,
                 $perPage,
                 $page,
                 [
@@ -157,9 +158,10 @@ class InternController extends Controller
                     $videosQuery->latest();
             }
 
-            $paginatedVideos = $videosQuery->paginate(12);
+            $perPage = 100; // Increased limit to show all/most videos on one page
+            $paginatedVideos = $videosQuery->paginate($perPage);
 
-            $videos = $paginatedVideos->map(function ($video) use ($user) {
+            $mappedItems = $paginatedVideos->getCollection()->map(function ($video) use ($user) {
                 $progress = VideoProgress::where('user_id', $user->id)
                     ->where('video_id', $video->id)
                     ->first();
@@ -192,6 +194,8 @@ class InternController extends Controller
                     'created_at' => $video->created_at,
                 ];
             });
+
+            $videos = $paginatedVideos->setCollection($mappedItems);
         }
 
         $selectedCategory = $categoryId ? VideoCategory::find($categoryId) : null;

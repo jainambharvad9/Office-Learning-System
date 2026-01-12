@@ -29,10 +29,10 @@
                                 <i class="bi bi-folder"></i> Category
                             </label>
                             <select name="category" class="form-select" style="background-color: var(--input-bg); border-color: var(--border); color: var(--text-primary);">
-                                <option value="">All Categories</option>
+                                <option value="">All Categories ({{ $categories->sum('videos_count') }})</option>
                                 @forelse($categories as $category)
                                     <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
+                                        {{ $category->name }} ({{ $category->videos_count }})
                                     </option>
                                 @empty
                                     <option disabled>No categories</option>
@@ -121,9 +121,13 @@
         <!-- Main Content -->
         <div class="col-lg-9">
             @php
+                // Use items() if it's a Paginator, otherwise just use the collection
+                $videoItems = $videos instanceof \Illuminate\Pagination\AbstractPaginator ? $videos->items() : $videos;
+                
                 // Group videos by category and sort by part_number within each category
-                $videosByCategory = collect($videos)->groupBy(function($video) {
-                    return $video['category'] ? $video['category']->name : 'Uncategorized';
+                $videosByCategory = collect($videoItems)->groupBy(function($video) {
+                    $cat = $video['category'];
+                    return is_object($cat) ? $cat->name : ($cat ?: 'Uncategorized');
                 })->map(function($categoryVideos) {
                     return $categoryVideos->sortBy('part_number');
                 })->sortKeys();
@@ -134,11 +138,15 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="mb-1" style="color: var(--text-primary);">
-                            <i class="bi bi-film"></i> All Videos
+                            <i class="bi bi-film"></i> 
+                            @if(request('search'))
+                                Search Results for "{{ request('search') }}"
+                            @else
+                                Training Gallery
+                            @endif
                         </h2>
                         <p class="text-muted" style="color: var(--text-secondary) !important;">
-                            {{ $videosByCategory->count() }} categor{{ $videosByCategory->count() > 1 ? 'ies' : 'y' }} •
-                            Total: <strong>{{ $videos instanceof \Illuminate\Pagination\Paginator ? $videos->total() : collect($videos)->count() }}</strong> videos
+                            Showing <strong>{{ collect($videoItems)->count() }}</strong> of <strong>{{ $videos instanceof \Illuminate\Pagination\LengthAwarePaginator ? $videos->total() : collect($videoItems)->count() }}</strong> total videos
                         </p>
                     </div>
                 </div>
@@ -159,8 +167,21 @@
                                     {{ $categoryName }}
                                 </h3>
                                 <p class="category-subtitle mb-0" style="color: var(--text-secondary); font-size: 0.9rem;">
-                                    {{ $categoryVideos->count() }} video{{ $categoryVideos->count() > 1 ? 's' : '' }} •
-                                    Total duration: {{ $categoryVideos->sum(function($video) { return $video['duration'] ? strtotime($video['duration']) - strtotime('00:00') : 0; }) ? gmdate('H:i:s', $categoryVideos->sum(function($video) { return $video['duration'] ? strtotime($video['duration']) - strtotime('00:00') : 0; })) : 'Unknown' }}
+                                    <span class="badge bg-secondary me-2">{{ $categoryVideos->count() }} videos</span>
+                                    <span class="text-muted">
+                                        <i class="bi bi-clock"></i> 
+                                        @php
+                                            $totalSeconds = $categoryVideos->sum(function($v) {
+                                                if (empty($v['duration']) || $v['duration'] == '00:00') return 0;
+                                                $parts = explode(':', $v['duration']);
+                                                return count($parts) == 2 ? ($parts[0] * 60) + $parts[1] : 0;
+                                            });
+                                            $h = floor($totalSeconds / 3600);
+                                            $m = floor(($totalSeconds % 3600) / 60);
+                                            $s = $totalSeconds % 60;
+                                        @endphp
+                                        Total Duration: {{ $h > 0 ? $h.'h ' : '' }}{{ $m }}m {{ $s }}s
+                                    </span>
                                 </p>
                             </div>
                         </div>
