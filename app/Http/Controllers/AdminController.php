@@ -79,6 +79,9 @@ class AdminController extends Controller
         }
 
         try {
+            // Increase execution time for this specific request
+            set_time_limit(600); // 10 minutes
+
             $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
