@@ -250,12 +250,62 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Intern registered successfully!');
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        $reports = VideoProgress::with(['user', 'video'])
+        $query = VideoProgress::with(['user', 'video.category'])
             ->whereHas('user')
-            ->whereHas('video')
-            ->get()
+            ->whereHas('video');
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->whereHas('video', function ($q) use ($request) {
+                $q->where('category_id', $request->category);
+            });
+        }
+
+        // Intern filter
+        if ($request->filled('intern')) {
+            $query->where('user_id', $request->intern);
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%");
+                })->orWhereHas('video', function ($videoQuery) use ($search) {
+                    $videoQuery->where('title', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Sorting
+        $orderBy = $request->get('order_by', 'created_at');
+        $direction = $request->get('direction', 'desc');
+
+        // Validate order_by to prevent SQL injection
+        $allowedOrderBy = ['intern_name', 'video_name', 'watch_count', 'completion_status', 'created_at'];
+        if (!in_array($orderBy, $allowedOrderBy)) {
+            $orderBy = 'created_at';
+        }
+
+        // Special handling for sortable fields
+        if ($orderBy === 'intern_name') {
+            $query->join('users', 'video_progress.user_id', '=', 'users.id')
+                ->orderBy('users.name', $direction)
+                ->select('video_progress.*');
+        } elseif ($orderBy === 'video_name') {
+            $query->join('videos', 'video_progress.video_id', '=', 'videos.id')
+                ->orderBy('videos.title', $direction)
+                ->select('video_progress.*');
+        } elseif ($orderBy === 'completion_status') {
+            $query->orderBy('is_completed', $direction);
+        } else {
+            $query->orderBy($orderBy, $direction);
+        }
+
+        $reports = $query->get()
             ->map(function ($progress) {
                 $percentage = $progress->video->duration > 0
                     ? min(100, ($progress->watched_duration / $progress->video->duration) * 100)
@@ -264,33 +314,17 @@ class AdminController extends Controller
                 return [
                     'intern_name' => $progress->user->name,
                     'video_name' => $progress->video->title,
-                    'watch_percentage' => round($percentage, 1),
-                    'watched_duration' => gmdate('i:s', $progress->watched_duration),
-                    'total_duration' => gmdate('i:s', $progress->video->duration),
-                    'completion_status' => $progress->is_completed ? 'Completed' : 'In Progress',
-                    'watch_count' => $progress->watch_count
+                    'watch_time' => gmdate('i:s', $progress->watched_duration) . ' / ' . gmdate('i:s', $progress->video->duration),
+                    'watch_count' => $progress->watch_count,
+                    'completion_status' => $progress->is_completed ? 'Completed' : 'In Progress'
                 ];
             });
 
-        // Group by user for watch counts
-        $userWatchCounts = User::where('role', 'intern')
-            ->with(['videoProgress' => function ($query) {
-                $query->where('is_completed', true);
-            }])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'name' => $user->name,
-                    'watch_count' => $user->videoProgress->count(),
-                    'total_videos' => Video::count()
-                ];
-            });
+        // Get filter options
+        $categories = VideoCategory::active()->get();
+        $interns = User::where('role', 'intern')->get();
 
-        // Calculate average completion
-        $totalProgress = VideoProgress::count();
-        $completedProgress = VideoProgress::where('is_completed', true)->count();
-        $averageCompletion = $totalProgress > 0 ? round(($completedProgress / $totalProgress) * 100, 1) : 0;
-        return view('admin.reports', compact('reports', 'userWatchCounts', 'averageCompletion'));
+        return view('admin.reports', compact('reports', 'categories', 'interns'));
     }
 
     private function getVideoDuration($filePath)
@@ -334,25 +368,77 @@ class AdminController extends Controller
         return 0;
     }
 
-    public function manageVideos()
+    public function manageVideos(Request $request)
     {
-        $videos = Video::withCount(['progress as completed_count' => function ($query) {
+        $query = Video::withCount(['progress as completed_count' => function ($query) {
             $query->where('is_completed', true);
-        }])->get()->map(function ($video) {
+        }])->with('category');
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Intern filter - videos accessed by specific intern
+        if ($request->filled('intern')) {
+            $query->whereHas('progress', function ($q) use ($request) {
+                $q->where('user_id', $request->intern);
+            });
+        }
+
+        // Sorting
+        $orderBy = $request->get('order_by', 'created_at');
+        $direction = $request->get('direction', 'desc');
+
+        // Validate order_by to prevent SQL injection
+        $allowedOrderBy = ['title', 'created_at', 'file_size', 'total_views', 'completed_count'];
+        if (!in_array($orderBy, $allowedOrderBy)) {
+            $orderBy = 'created_at';
+        }
+
+        if ($orderBy === 'total_views') {
+            // Special handling for total_views since it's not a direct column
+            $query->withCount(['progress as total_views']);
+            $query->orderBy('total_views', $direction);
+        } elseif ($orderBy === 'file_size') {
+            // File size ordering might need special handling, but for now use created_at as fallback
+            $query->orderBy('created_at', $direction);
+        } else {
+            $query->orderBy($orderBy, $direction);
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 25);
+        $videos = $query->paginate($perPage)->through(function ($video) {
             return [
                 'id' => $video->id,
                 'title' => $video->title,
                 'description' => $video->description,
+                'category' => $video->category ? $video->category->name : 'Uncategorized',
                 'duration' => $video->duration > 0 ? gmdate('i:s', $video->duration) : 'Unknown',
                 'file_size' => $this->getFileSize(storage_path('app/public/' . $video->video_path)),
                 'upload_date' => $video->created_at->format('M d, Y'),
                 'completed_count' => $video->completed_count,
-                'total_views' => VideoProgress::where('video_id', $video->id)->count(),
+                'total_views' => $video->total_views ?? VideoProgress::where('video_id', $video->id)->count(),
             ];
         });
 
-        return view('admin.videos', compact('videos'));
+        // Get filter options
+        $categories = VideoCategory::active()->get();
+        $interns = User::where('role', 'intern')->get();
+
+        return view('admin.videos', compact('videos', 'categories', 'interns'));
     }
+
 
     public function editVideo($id)
     {

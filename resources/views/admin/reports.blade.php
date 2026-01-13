@@ -41,10 +41,79 @@
                     <div class="stat-icon">
                         <i class="fas fa-percentage"></i>
                     </div>
-                    <div class="stat-number">{{ $averageCompletion }}%</div>
+                    <div class="stat-number">{{ round($reports->avg('watch_percentage'), 1) }}%</div>
                     <div class="stat-label">Avg Completion</div>
                 </div>
             </div> --}}
+
+            <!-- Filters and Search -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-filter"></i>
+                        Filters & Search
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('admin.reports') }}" id="filterForm">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <!-- Search -->
+                            <div>
+                                <label for="search" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-search"></i> Search
+                                </label>
+                                <input type="text" id="search" name="search" value="{{ request('search') }}"
+                                       placeholder="Search by intern or video..."
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div>
+                                <label for="category" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-tag"></i> Category
+                                </label>
+                                <select id="category" name="category" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                                    <option value="">All Categories</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
+                                            {{ $cat->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Intern Filter -->
+                            <div>
+                                <label for="intern" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-user"></i> Intern
+                                </label>
+                                <select id="intern" name="intern" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                                    <option value="">All Interns</option>
+                                    @foreach($interns as $internUser)
+                                    <option value="{{ $internUser->id }}" {{ request('intern') == $internUser->id ? 'selected' : '' }}>
+                                        {{ $internUser->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <a href="{{ route('admin.reports') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </a>
+                            @if(request()->hasAny(['search', 'category', 'intern']))
+                                <span style="color: var(--text-secondary); font-size: 0.9rem;">
+                                    Showing {{ $reports->count() }} results
+                                </span>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- Detailed Reports Table -->
             <div class="card">
@@ -59,24 +128,53 @@
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border);">
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Intern Name</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Video Title</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Watch Time</th>
-                                    {{-- <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Progress</th> --}}
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Watch Count</th>
-                                    <th 
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Status</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ route('admin.reports') . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'intern_name', 'direction' => (request('order_by') === 'intern_name' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Intern Name
+                                            @if(request('order_by') === 'intern_name')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ route('admin.reports') . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'video_name', 'direction' => (request('order_by') === 'video_name' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Video Title
+                                            @if(request('order_by') === 'video_name')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        Watch Time
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ route('admin.reports') . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'watch_count', 'direction' => (request('order_by') === 'watch_count' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Watch Count
+                                            @if(request('order_by') === 'watch_count')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ route('admin.reports') . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'completion_status', 'direction' => (request('order_by') === 'completion_status' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Status
+                                            @if(request('order_by') === 'completion_status')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -88,24 +186,13 @@
                                         <td style="padding: 0.75rem; color: var(--text-secondary);">{{ $report['video_name'] }}
                                         </td>
                                         <td style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.9rem;">
-                                            {{ $report['watched_duration'] }} / {{ $report['total_duration'] }}
+                                            {{ $report['watch_time'] }}
                                         </td>
-                                        {{-- <td style="padding: 0.75rem;">
-                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <div class="progress-bar" style="flex: 1; height: 8px;">
-                                                    <div class="progress-fill"
-                                                        style="width: {{ $report['watch_percentage'] }}%;"></div>
-                                                </div>
-                                                <span
-                                                    style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">{{ $report['watch_percentage'] }}%</span>
-                                            </div>
-                                        </td> --}}
                                         <td style="padding: 0.75rem; color: var(--text-primary); font-weight: 500;">
                                             {{ $report['watch_count'] }}
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <span
-                                                class="status-badge status-{{ strtolower(str_replace(' ', '-', $report['completion_status'])) }}">
+                                            <span class="status-badge status-{{ strtolower(str_replace(' ', '-', $report['completion_status'])) }}">
                                                 {{ $report['completion_status'] }}
                                             </span>
                                         </td>
@@ -124,59 +211,38 @@
                     @endif
                 </div>
             </div>
-
-            <!-- User Watch Counts -->
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-eye"></i>
-                        User Watch Counts
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Intern Name</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Videos Watched</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Completion Rate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($userWatchCounts as $user)
-                                    <tr style="border-bottom: 1px solid var(--border-light);">
-                                        <td style="padding: 0.75rem; color: var(--text-primary); font-weight: 500;">
-                                            {{ $user['name'] }}
-                                        </td>
-                                        <td style="padding: 0.75rem; color: var(--text-primary);">
-                                            {{ $user['watch_count'] }} / {{ $user['total_videos'] }}
-                                        </td>
-                                        <td style="padding: 0.75rem;">
-                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <div class="progress-bar" style="flex: 1; height: 8px;">
-                                                    <div class="progress-fill"
-                                                        style="width: {{ $user['total_videos'] > 0 ? ($user['watch_count'] / $user['total_videos']) * 100 : 0 }}%;">
-                                                    </div>
-                                                </div>
-                                                <span
-                                                    style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
-                                                    {{ $user['total_videos'] > 0 ? round(($user['watch_count'] / $user['total_videos']) * 100, 1) : 0 }}%
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
+    </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterForm = document.getElementById('filterForm');
+    const filterInputs = filterForm.querySelectorAll('select');
+
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Small delay to prevent too many requests
+            clearTimeout(window.filterTimeout);
+            window.filterTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 300);
+        });
+    });
+
+    // Search input with debounce
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 800);
+        });
+    }
+});
+</script>
+@endpush

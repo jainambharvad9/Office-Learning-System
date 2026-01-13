@@ -10,14 +10,86 @@
                 <p class="dashboard-subtitle">Manage uploaded videos, view statistics, and delete content.</p>
             </div>
 
-            <!-- Action Buttons -->
-            <div style="margin-bottom: 2rem; display: flex; gap: 1rem;">
-                <a href="{{ route('admin.upload.form') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Upload New Video
-                </a>
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
+            <!-- Filters and Search -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-filter"></i>
+                        Filters & Search
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('admin.videos') }}" id="filterForm">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <!-- Search -->
+                            <div>
+                                <label for="search" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-search"></i> Search Videos
+                                </label>
+                                <input type="text" id="search" name="search" value="{{ request('search') }}"
+                                       placeholder="Search by title or description..."
+                                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div>
+                                <label for="category" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-tag"></i> Category
+                                </label>
+                                <select id="category" name="category" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                                    <option value="">All Categories</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
+                                            {{ $cat->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Intern Filter -->
+                            {{-- <div>
+                                <label for="intern" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-user"></i> Accessed by Intern
+                                </label>
+                                <select id="intern" name="intern" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                                    <option value="">All Videos</option>
+                                    @foreach($interns as $intern)
+                                        <option value="{{ $intern->id }}" {{ request('intern') == $intern->id ? 'selected' : '' }}>
+                                            {{ $intern->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div> --}}
+
+                            <!-- Per Page -->
+                            <div>
+                                <label for="per_page" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                    <i class="fas fa-list"></i> Items per page
+                                </label>
+                                <select id="per_page" name="per_page" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary);">
+                                    <option value="10" {{ request('per_page', 25) == 10 ? 'selected' : '' }}>10</option>
+                                    <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25</option>
+                                    <option value="50" {{ request('per_page', 25) == 50 ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ request('per_page', 25) == 100 ? 'selected' : '' }}>100</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <a href="{{ route('admin.videos') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </a>
+                            @if(request()->hasAny(['search', 'category', 'intern']))
+                                <span style="color: var(--text-secondary); font-size: 0.9rem;">
+                                    Showing {{ $videos->count() }} of {{ $videos->total() }} videos
+                                </span>
+                            @endif
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- Videos Table -->
@@ -25,7 +97,7 @@
                 <div class="card-header">
                     <h3 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-video"></i>
-                        All Videos ({{ $videos->count() }})
+                        Videos ({{ $videos->total() }})
                     </h3>
                 </div>
                 <div class="card-body">
@@ -33,27 +105,62 @@
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border);">
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Title</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Duration</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        File Size</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Views</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Completed</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
-                                        Upload Date</th>
-                                    <th
-                                        style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--text-primary);">
-                                        Actions</th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ $videos->url($videos->currentPage()) . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'title', 'direction' => (request('order_by') === 'title' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Title
+                                            @if(request('order_by') === 'title')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        Category
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        Duration
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        File Size
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ $videos->url($videos->currentPage()) . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'total_views', 'direction' => (request('order_by') === 'total_views' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Views
+                                            @if(request('order_by') === 'total_views')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ $videos->url($videos->currentPage()) . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'completed_count', 'direction' => (request('order_by') === 'completed_count' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Completed
+                                            @if(request('order_by') === 'completed_count')
+                                                <i class="fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-primary);">
+                                        <a href="{{ $videos->url($videos->currentPage()) . '?' . http_build_query(array_merge(request()->query(), ['order_by' => 'created_at', 'direction' => (request('order_by') === 'created_at' && request('direction') === 'asc') ? 'desc' : 'asc'])) }}"
+                                           style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                                            Upload Date
+                                            @if(request('order_by') === 'created_at' || !request('order_by'))
+                                                <i class="fas fa-sort-{{ (request('order_by') === 'created_at' && request('direction') === 'asc') || !request('order_by') ? 'down' : 'up' }}"></i>
+                                            @else
+                                                <i class="fas fa-sort" style="opacity: 0.5;"></i>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--text-primary);">
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,6 +175,11 @@
                                             @endif
                                         </td>
                                         <td style="padding: 0.75rem; color: var(--text-secondary);">
+                                            <span style="background: var(--primary-light); color: var(--primary); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                                                {{ $video['category'] }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 0.75rem; color: var(--text-secondary);">
                                             {{ $video['duration'] }}
                                         </td>
                                         <td style="padding: 0.75rem; color: var(--text-secondary);">
@@ -77,8 +189,7 @@
                                             {{ $video['total_views'] }}
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <span
-                                                style="background: var(--success); color: white; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                                            <span style="background: var(--success); color: white; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
                                                 {{ $video['completed_count'] }}
                                             </span>
                                         </td>
@@ -107,12 +218,19 @@
                         </table>
                     </div>
 
+                    <!-- Pagination -->
+                    @if($videos->hasPages())
+                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                            {{ $videos->appends(request()->query())->links() }}
+                        </div>
+                    @endif
+
                     @if($videos->isEmpty())
                         <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                             <i class="fas fa-video-slash" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <p>No videos uploaded yet.</p>
-                            <a href="{{ route('admin.upload.form') }}" class="btn btn-primary" style="margin-top: 1rem;">
-                                <i class="fas fa-plus"></i> Upload Your First Video
+                            <p>No videos found matching your criteria.</p>
+                            <a href="{{ route('admin.videos') }}" class="btn btn-secondary" style="margin-top: 1rem;">
+                                <i class="fas fa-times"></i> Clear Filters
                             </a>
                         </div>
                     @endif
@@ -121,3 +239,33 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterForm = document.getElementById('filterForm');
+    const filterInputs = filterForm.querySelectorAll('input, select');
+
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Small delay to prevent too many requests
+            clearTimeout(window.filterTimeout);
+            window.filterTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 500);
+        });
+    });
+
+    // Search input with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterForm.submit();
+        }, 800);
+    });
+});
+</script>
+@endpush
