@@ -220,8 +220,18 @@
 
                     <!-- Pagination -->
                     @if($videos->hasPages())
-                        <div>
-                            {{ $videos->appends(request()->query())->links() }}
+                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                            @if($videos->currentPage() > 1)
+                                <a href="{{ $videos->url($videos->currentPage() - 1) . '?' . http_build_query(request()->query()) }}" style="display: inline-block; padding: 0.5rem 1rem; margin-right: 1rem; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; border: none; cursor: pointer;">Previous</a>
+                            @else
+                                <button disabled style="display: inline-block; padding: 0.5rem 1rem; margin-right: 1rem; background: #ddd; color: #999; border-radius: 4px; font-size: 14px; border: none; cursor: not-allowed;">Previous</button>
+                            @endif
+
+                            @if($videos->hasMorePages())
+                                <a href="{{ $videos->url($videos->currentPage() + 1) . '?' . http_build_query(request()->query()) }}" style="display: inline-block; padding: 0.5rem 1rem; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; border: none; cursor: pointer;">Next</a>
+                            @else
+                                <button disabled style="display: inline-block; padding: 0.5rem 1rem; background: #ddd; color: #999; border-radius: 4px; font-size: 14px; border: none; cursor: not-allowed;">Next</button>
+                            @endif
                         </div>
                     @endif
 
