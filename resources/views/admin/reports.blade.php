@@ -217,13 +217,13 @@
                             @endif
                         </div>
                     @endif
- <!-- Pagination -->
-                    @if($videos->hasPages())
+                    <!-- Pagination -->
+                    @if($reports->hasPages())
                         <div style="margin-top: 2rem; display: flex; justify-content: center;">
-                            {{ $videos->appends(request()->query())->links() }}
+                            {{ $reports->appends(request()->query())->links() }}
                         </div>
                     @endif
-                    
+
                     @if($reports->isEmpty())
                         <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                             <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 1rem;"></i>
