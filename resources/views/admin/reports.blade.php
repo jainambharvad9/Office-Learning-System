@@ -219,7 +219,7 @@
                     @endif
                     <!-- Pagination -->
                     @if($reports->hasPages())
-                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                        <div>
                             {{ $reports->appends(request()->query())->links() }}
                         </div>
                     @endif

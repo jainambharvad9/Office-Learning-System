@@ -220,7 +220,7 @@
 
                     <!-- Pagination -->
                     @if($videos->hasPages())
-                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                        <div>
                             {{ $videos->appends(request()->query())->links() }}
                         </div>
                     @endif
