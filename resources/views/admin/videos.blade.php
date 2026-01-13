@@ -220,18 +220,63 @@
 
                     <!-- Pagination -->
                     @if($videos->hasPages())
-                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
-                            @if($videos->currentPage() > 1)
-                                <a href="{{ $videos->url($videos->currentPage() - 1) . '?' . http_build_query(request()->query()) }}" style="display: inline-block; padding: 0.5rem 1rem; margin-right: 1rem; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; border: none; cursor: pointer;">Previous</a>
-                            @else
-                                <button disabled style="display: inline-block; padding: 0.5rem 1rem; margin-right: 1rem; background: #ddd; color: #999; border-radius: 4px; font-size: 14px; border: none; cursor: not-allowed;">Previous</button>
-                            @endif
+                        <div style="margin-top: 3rem; text-align: center;">
+                            <div style="display: inline-block; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    {{-- Previous Button --}}
+                                    @if($videos->currentPage() > 1)
+                                        <a href="{{ $videos->appends(request()->query())->url(1) }}" style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; color: #0066cc; text-decoration: none; font-size: 14px; display: inline-block;">« Previous</a>
+                                    @else
+                                        <span style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; color: #ccc; font-size: 14px; display: inline-block;">« Previous</span>
+                                    @endif
 
-                            @if($videos->hasMorePages())
-                                <a href="{{ $videos->url($videos->currentPage() + 1) . '?' . http_build_query(request()->query()) }}" style="display: inline-block; padding: 0.5rem 1rem; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; border: none; cursor: pointer;">Next</a>
-                            @else
-                                <button disabled style="display: inline-block; padding: 0.5rem 1rem; background: #ddd; color: #999; border-radius: 4px; font-size: 14px; border: none; cursor: not-allowed;">Next</button>
-                            @endif
+                                    {{-- Page Numbers --}}
+                                    <div style="display: flex; align-items: center;">
+                                        @php
+                                            $totalPages = $videos->lastPage();
+                                            $currentPage = $videos->currentPage();
+                                            $start = max(1, $currentPage - 1);
+                                            $end = min($totalPages, $currentPage + 1);
+                                            if ($end - $start < 2) {
+                                                $start = max(1, $end - 2);
+                                                $end = min($totalPages, $start + 2);
+                                            }
+                                        @endphp
+
+                                        @if($start > 1)
+                                            <a href="{{ $videos->appends(request()->query())->url(1) }}" style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; color: #0066cc; text-decoration: none; font-size: 14px; display: inline-block;">1</a>
+                                            @if($start > 2)
+                                                <span style="padding: 0.75rem 0.5rem; border-right: 1px solid #ddd; color: #999; font-size: 14px; display: inline-block;">...</span>
+                                            @endif
+                                        @endif
+
+                                        @for($page = $start; $page <= $end; $page++)
+                                            @if($page == $currentPage)
+                                                <span style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; background: #0066cc; color: white; font-weight: bold; font-size: 14px; display: inline-block;">{{ $page }}</span>
+                                            @else
+                                                <a href="{{ $videos->appends(request()->query())->url($page) }}" style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; color: #0066cc; text-decoration: none; font-size: 14px; display: inline-block;">{{ $page }}</a>
+                                            @endif
+                                        @endfor
+
+                                        @if($end < $totalPages)
+                                            @if($end < $totalPages - 1)
+                                                <span style="padding: 0.75rem 0.5rem; border-right: 1px solid #ddd; color: #999; font-size: 14px; display: inline-block;">...</span>
+                                            @endif
+                                            <a href="{{ $videos->appends(request()->query())->url($totalPages) }}" style="padding: 0.75rem 1rem; border-right: 1px solid #ddd; color: #0066cc; text-decoration: none; font-size: 14px; display: inline-block;">{{ $totalPages }}</a>
+                                        @endif
+                                    </div>
+
+                                    {{-- Next Button --}}
+                                    @if($videos->hasMorePages())
+                                        <a href="{{ $videos->appends(request()->query())->url($videos->currentPage() + 1) }}" style="padding: 0.75rem 1rem; color: #0066cc; text-decoration: none; font-size: 14px; display: inline-block;">Next »</a>
+                                    @else
+                                        <span style="padding: 0.75rem 1rem; color: #ccc; font-size: 14px; display: inline-block;">Next »</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem; color: #666; font-size: 14px;">
+                                Showing {{ ($videos->currentPage() - 1) * $videos->perPage() + 1 }} to {{ min($videos->currentPage() * $videos->perPage(), $videos->total()) }} of {{ $videos->total() }} results
+                            </div>
                         </div>
                     @endif
 
