@@ -202,6 +202,28 @@
                         </table>
                     </div>
 
+                    @if($reports->hasPages())
+                        <div class="pagination-container" style="margin-top: 2rem; text-align: center;">
+                            @if($reports->currentPage() > 1)
+                                <a href="{{ $reports->url($reports->currentPage() - 1) . '?' . http_build_query(request()->query()) }}" class="btn btn-secondary" style="margin-right: 1rem;">Previous</a>
+                            @else
+                                <button class="btn btn-secondary" disabled style="margin-right: 1rem;">Previous</button>
+                            @endif
+
+                            @if($reports->hasMorePages())
+                                <a href="{{ $reports->url($reports->currentPage() + 1) . '?' . http_build_query(request()->query()) }}" class="btn btn-primary">Next</a>
+                            @else
+                                <button class="btn btn-primary" disabled>Next</button>
+                            @endif
+                        </div>
+                    @endif
+ <!-- Pagination -->
+                    @if($videos->hasPages())
+                        <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                            {{ $videos->appends(request()->query())->links() }}
+                        </div>
+                    @endif
+                    
                     @if($reports->isEmpty())
                         <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                             <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 1rem;"></i>

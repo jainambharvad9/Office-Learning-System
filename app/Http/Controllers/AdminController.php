@@ -305,8 +305,8 @@ class AdminController extends Controller
             $query->orderBy($orderBy, $direction);
         }
 
-        $reports = $query->get()
-            ->map(function ($progress) {
+        $reports = $query->paginate(15)
+            ->through(function ($progress) {
                 $percentage = $progress->video->duration > 0
                     ? min(100, ($progress->watched_duration / $progress->video->duration) * 100)
                     : 0;
